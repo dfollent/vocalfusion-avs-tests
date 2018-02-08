@@ -3,10 +3,14 @@ import sys
 import os
 import argparse
 from ssh_runner import ssh_runner
+from ssh_runner import get_printer_logger
 from play_wav import play_wav
 import time
+from datetime import datetime
 import json
 import traceback
+
+log_filepath = 'logs'
 
 def get_json(file):
     with open(file, 'r') as f:
@@ -20,6 +24,11 @@ def get_args(args):
     return avs_devices, pb_device, pb_files
 
 def run_tests(avs_devices, pb_device, pb_files):
+    
+    file_name = "{}_test_results".format(datetime.now().strftime('%Y%m%d'))
+    file_path = 'logs'
+
+    logger = get_printer_logger(file_name, file_path)
     runners = []
     try:
         for device in avs_devices:
@@ -29,7 +38,8 @@ def run_tests(avs_devices, pb_device, pb_files):
                                 device.get('username'),
                                 device.get('password'),
                                 device.get('wakeword'),
-                                device.get('cmd'))
+                                device.get('cmd'),
+                                log_filepath)
             runners.append(runner)
 
         for runner in runners:
@@ -38,21 +48,26 @@ def run_tests(avs_devices, pb_device, pb_files):
         # Loop through files
         for file in pb_files:
             time.sleep(5)
-            print "Running Test: {}".format(file)
+            logger.info("Running Test: {}".format(file))
             play_wav(os.path.join('..', '..', 'audio', 'v1p7', file), pb_device)
             time.sleep(5)
-            print "Test Complete: {}".format(file)
+            logger.info("Test Complete: {}".format(file))
             for runner in runners:
-                print "Count: {} - {}".format(runner.get_count(), runner.label)
+                logger.info("Count: {} - {} - {}".format(runner.get_count(), runner.label, runner.hostname))
                 runner.reset_count()
 
+            for runner in runners:
+                if runner.connected is False:
+                    raise Exception("{} - {} - Runner disconnected!".format(runner.label, runner.hostname))
+
+
     except KeyboardInterrupt:
-        print "KeyboardInterrupt - run_tests()"
+        logger.info("KeyboardInterrupt")
 
     except Exception as e:
-        print "Exception: run_tests()"
-        print str(e)
-        traceback.print_exc()
+        logger.info("Exception:")
+        logger.info(str(e))
+        # traceback.print_exc()
 
 
     finally:
