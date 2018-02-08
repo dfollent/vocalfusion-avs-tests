@@ -1,0 +1,24 @@
+{
+  "playback_files":[
+    "cleanv1.7_SoundRoomCalibrated.wav",
+    "Music-6dbv1.7_SoundRoomCalibrated.wav",
+    "Music-3dbv1.7_SoundRoomCalibrated.wav",
+    "Music-0dbv1.7_SoundRoomCalibrated.wav",
+    "Kitchen-6dbv1.7_SoundRoomCalibrated.wav",
+    "Kitchen-3dbv1.7_SoundRoomCalibrated.wav",
+    "Kitchen-0dbv1.7_SoundRoomCalibrated.wav"
+  ],
+  "playback_device":"xCORE-AUDIO Hi-Res 2",
+  "listening_devices":[
+    {
+      "ip":"10.0.77.119",
+      "cmd":"./shell_3",
+      "wakeword":"wake word detected"
+    },
+    {
+      "ip":"10.0.77.108",
+      "cmd":"./avsrun",
+      "wakeword":"Listening..."
+    }
+  ]
+}
