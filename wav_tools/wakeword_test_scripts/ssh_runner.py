@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-
 import threading
 from stoppable_thread import stoppable_thread
 from pexpect import pxssh
+import pexpect
 import getpass
 import time
 import traceback
@@ -10,7 +10,7 @@ import re
 
 
 class ssh_runner():
-    def __init__(self, label, ipaddress, username, password, wakeword):
+    def __init__(self, label, ipaddress, username, password, wakeword, cmd):
         self.label = label
         self.hostname = ipaddress
         self.username = username
@@ -18,9 +18,9 @@ class ssh_runner():
         self.t = stoppable_thread(target=self.run)
         self.lock = threading.Lock()
         self.connected = False
-        self.ssh = pxssh.pxssh()
+        self.ssh = pxssh.pxssh(ignore_sighup=False)
         self.avs_kill_cmd = 'q'
-        self.start_cmd = 'avsrun'
+        self.start_cmd = cmd
         self.regex = re.compile(wakeword)
         self._counter = 0
 
@@ -38,35 +38,33 @@ class ssh_runner():
                 if(self.t.stopped()):
                     print "Stopped"
                     break
-
+                    
                 line = self.ssh.readline().strip()
                 # print line
                 if self.regex.search(line):
-                    self.lock.acquire()
-                    self._counter += 1
-                    self.lock.release()
+                    with self.lock:
+                        self._counter += 1
                     print '({}) ({}) {}'.format(self._counter,
                                                 self.label,
                                                 line)
 
+        except Exception as e:
+            print "Exception: ssh_runner.run()"
+            print str(e)
+            traceback.print_exc()
+
+        finally:
             print "Logging out"
             self.ssh.sendline(self.avs_kill_cmd)
             self.ssh.logout()
             self.connected = False
-        except Exception as e:
-            print "Exception: SshRunner.run()"
-            print str(e)
-            traceback.print_exc()
 
     def reset_count(self):
-        self.lock.acquire();
-        self._counter = 0
-        self.lock.release()
+        with self.lock:
+            self._counter = 0
 
     def get_count(self):
-        self.lock.acquire();
         return self._counter
-        self.lock.release()
 
     def stop(self):
         self.t.stop()
@@ -86,16 +84,17 @@ class ssh_runner():
 if __name__ == '__main__':
     try:
         runner = ssh_runner('AVS v1.4 I2S',
-                           '10.0.77.77',
+                           '10.0.77.108',
                            'pi',
                            'raspberry',
+                           'avsrun',
                            'Listening...')
 
         runner.start()
         time.sleep(2)
         if runner.connected:
             time.sleep(20)
-
+        print "Count - {}".format(runner.get_count())
         runner.reset_count()
 
     except KeyboardInterrupt:

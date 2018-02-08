@@ -3,37 +3,22 @@ import sys
 import pyaudio
 import time
 import wave
+import numpy
+import struct
 
 
 from play_record_wav import get_audio_devices
 
-def out_stream_callback(in_data, frame_count, time_info, status):
-    global index, repeat
-
-    n_samples = frame_count*n_channels
-
-    npdata = samples[index:index+n_samples]
-    data = npdata.tolist()
-
-    outstanding = n_samples - len(data)
-    if outstanding > 0:
-      # Running off the end of the audio
-      repeat -= 1
-      if repeat > 0:
-        npdata = samples[0:outstanding]
-        data += npdata.tolist()
-        index = outstanding
-    else:
-      index = index + n_samples
-
-    data = struct.pack(struct_format_str.format(len(data)), *data)
-    return (data, pyaudio.paContinue)
 
 
 def play_wav(pb_filename, pb_dev_name):
+    global index,repeat
+    index = 0
+    repeat = 1
     CHUNK_SIZE = 1024
+
     audio_manager = pyaudio.PyAudio()
-    pb_dev_index, rec_dev_index = get_audio_devices(audio_manager, pb_dev_name, NULL)
+    pb_dev_index, rec_dev_index = get_audio_devices(audio_manager, pb_dev_name, None)
 
     wav_to_play = wave.open(pb_filename, 'rb')
     samp_width = wav_to_play.getsampwidth()
@@ -50,7 +35,29 @@ def play_wav(pb_filename, pb_dev_name):
     n_channels = wav_to_play.getnchannels()
     play_framerate = wav_to_play.getframerate()
     data = wav_to_play.readframes(n_frames)
-    samples = np.array(struct.unpack(struct_format_str.format(n_frames*n_channels), data))
+    samples = numpy.array(struct.unpack(struct_format_str.format(n_frames*n_channels), data))
+
+    def out_stream_callback(in_data, frame_count, time_info, status):
+        global index, repeat
+        n_samples = frame_count*n_channels
+
+        npdata = samples[index:index+n_samples]
+        data = npdata.tolist()
+
+        outstanding = n_samples - len(data)
+        if outstanding > 0:
+          # Running off the end of the audio
+          repeat -= 1
+          if repeat > 0:
+            npdata = samples[0:outstanding]
+            data += npdata.tolist()
+            index = outstanding
+        else:
+          index = index + n_samples
+
+        data = struct.pack(struct_format_str.format(len(data)), *data)
+        return (data, pyaudio.paContinue)
+
 
     out_stream = audio_manager.open(format=audio_manager.get_format_from_width(
                                         wav_to_play.getsampwidth()),

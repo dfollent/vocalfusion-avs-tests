@@ -11,13 +11,11 @@
   "playback_device":"xCORE-AUDIO Hi-Res 2",
   "listening_devices":[
     {
-      "ip":"10.0.77.119",
-      "cmd":"./shell_3",
-      "wakeword":"wake word detected"
-    },
-    {
+      "label":"AVS v1.4",
       "ip":"10.0.77.108",
-      "cmd":"./avsrun",
+      "username":"pi",
+      "password":"raspberry",
+      "cmd":"avsrun",
       "wakeword":"Listening..."
     }
   ]

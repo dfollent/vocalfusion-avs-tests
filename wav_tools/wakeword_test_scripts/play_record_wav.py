@@ -60,7 +60,7 @@ class Runner():
     self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
     # for line in iter(self.proc.stdout.readline, b""):
     #     yield line
-    while(True)
+    while(True):
         output = self.proc.stdout.readline()
         if output == '' and proc.poll is not None:
             break
