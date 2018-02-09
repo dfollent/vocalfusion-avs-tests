@@ -11,8 +11,41 @@
   "playback_device":"xCORE-AUDIO Hi-Res 2",
   "listening_devices":[
     {
-      "label":"AVS v1.4 Stereo",
+      "label":"AVS v1.4 Stereo I2S 1",
       "ip":"10.0.77.108",
+      "username":"pi",
+      "password":"raspberry",
+      "cmd":"avsrun",
+      "wakeword":"Listening..."
+    }
+    ,
+    {
+      "label":"AVS v1.4 Stereo I2S 2",
+      "ip":"10.0.77.178",
+      "username":"pi",
+      "password":"raspberry",
+      "cmd":"avsrun",
+      "wakeword":"Listening..."
+    },
+    {
+      "label":"JavaApp Stereo I2S",
+      "ip":"10.0.77.190",
+      "username":"pi",
+      "password":"raspberry",
+      "cmd":"./shell_3",
+      "wakeword":"wake word detected"
+    },
+    {
+      "label":"JavaApp Stereo USB",
+      "ip":"10.0.77.191",
+      "username":"pi",
+      "password":"raspberry",
+      "cmd":"./shell_3",
+      "wakeword":"wake word detected"
+    },
+    {
+      "label":"AVS v1.4 Mono I2S",
+      "ip":"10.0.77.160",
       "username":"pi",
       "password":"raspberry",
       "cmd":"avsrun",

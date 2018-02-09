@@ -10,8 +10,13 @@ import traceback
 import re
 import logging
 
+kill_commands = {
+    'avsrun':'q'
+}
+
 
 class ssh_runner():
+
     def __init__(self, label, ipaddress, username, password, wakeword, cmd, logpath):
         self.label = label
         self.hostname = ipaddress
@@ -20,11 +25,20 @@ class ssh_runner():
         self.t = stoppable_thread(target=self.run)
         self.lock = threading.Lock()
         self.connected = False
-        self.ssh = pxssh.pxssh(timeout=120, ignore_sighup=False)
-        self.avs_kill_cmd = 'q'
+        self.ssh = pxssh.pxssh(timeout=None, ignore_sighup=False)
         self.start_cmd = cmd
         self.regex = re.compile(wakeword)
         self._counter = 0
+
+        if self.start_cmd in kill_commands:
+            self.kill_cmd = kill_commands[self.start_cmd]
+        else:
+            self.kill_cmd = chr(3)   # Ctrl+C interrupt
+
+        # if self.start_cmd == 'avsrun':
+        #     self.kill_cmd = 'q'
+        # else:
+        #     self.kill_cmd = chr(3)   # Ctrl+C interrupt
 
         file_name = "{}_{}_{}".format(datetime.now().strftime('%Y%m%d'), 
                                    label.replace(" ","_").replace(".","_"),
@@ -49,22 +63,25 @@ class ssh_runner():
 
                 line = self.ssh.readline().strip()
                 self.logger.info(line)
+
                 if self.regex.search(line):
                     with self.lock:
                         self._counter += 1
                     output = '({:02}) ({}) {}'.format(self._counter, 
                                                       self.label, 
                                                       line)
-                    print output
+                    print '{} {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), output)
                     self.logger.info(output)
 
         except Exception as e:
-            print "Exception:"
-            print str(e)
+            # print "{} Exception:".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            self.logger.Info("Exception:")
+            # print "{} {}".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), str(e))
+            self.logger.Info(str(e))
 
         finally:
             self.logger.info("Logging out")
-            self.ssh.sendline(self.avs_kill_cmd)
+            self.ssh.sendline(self.kill_cmd)
             self.ssh.logout()
             self.connected = False
 
@@ -78,12 +95,12 @@ class ssh_runner():
     def stop(self):
         self.t.stop()
         try:
-            self.ssh.sendline(self.avs_kill_cmd)
+            self.ssh.sendline(self.kill_cmd)
         except Exception:
             pass
         self.t.join(timeout=5)
         if self.t.is_alive():
-            self.logger.info("Thread still alive")
+            self.logger.info("Thread still alive. Sending Ctrl+C")
 
     def __del__(self):
         self.logger.info("Destructor called")

@@ -48,17 +48,23 @@ def run_tests(avs_devices, pb_device, pb_files):
         # Loop through files
         for file in pb_files:
             time.sleep(5)
+
             logger.info("Running Test: {}".format(file))
             play_wav(os.path.join('..', '..', 'audio', 'v1p7', file), pb_device)
+
             time.sleep(5)
+            logger.info('**************************')
             logger.info("Test Complete: {}".format(file))
             for runner in runners:
                 logger.info("Count: {} - {} - {}".format(runner.get_count(), runner.label, runner.hostname))
                 runner.reset_count()
-
+            logger.info('**************************')
+            
             for runner in runners:
                 if runner.connected is False:
-                    raise Exception("{} - {} - Runner disconnected!".format(runner.label, runner.hostname))
+                    raise Exception("Runner disconnected - {} - {}".format(runner.label, runner.hostname))
+                    # logger.error("ERROR: Runner disconnected - {} - {}".format(runner.label, runner.hostname))
+                    # runner.start()
 
 
     except KeyboardInterrupt:
