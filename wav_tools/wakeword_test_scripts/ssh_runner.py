@@ -29,6 +29,7 @@ class ssh_runner():
         self.start_cmd = cmd
         self.regex = re.compile(wakeword)
         self._counter = 0
+        self.last_time = datetime.now()
 
         if self.start_cmd in kill_commands:
             self.kill_cmd = kill_commands[self.start_cmd]
@@ -67,17 +68,24 @@ class ssh_runner():
                 if self.regex.search(line):
                     with self.lock:
                         self._counter += 1
-                    output = '({:02}) ({}) {}'.format(self._counter, 
+
+                    now = datetime.now()
+                    time_diff_str = str(now - self.last_time).split('.')
+                    self.last_time = now
+
+                    output = '({}) ({:02}) ({}) {}'.format(time_diff_str[0], 
+                                                      self._counter, 
                                                       self.label, 
                                                       line)
+
                     print '{} {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), output)
                     self.logger.info(output)
 
         except Exception as e:
             # print "{} Exception:".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-            self.logger.Info("Exception:")
+            self.logger.info("Exception:")
             # print "{} {}".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), str(e))
-            self.logger.Info(str(e))
+            self.logger.info(str(e))
 
         finally:
             self.logger.info("Logging out")
@@ -85,9 +93,10 @@ class ssh_runner():
             self.ssh.logout()
             self.connected = False
 
-    def reset_count(self):
+    def reset(self):
         with self.lock:
             self._counter = 0
+            self.last_time = datetime.now()
 
     def get_count(self):
         return self._counter

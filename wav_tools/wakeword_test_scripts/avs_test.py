@@ -2,6 +2,7 @@
 import sys
 import os
 import argparse
+import subprocess
 from ssh_runner import ssh_runner
 from ssh_runner import get_printer_logger
 from play_wav import play_wav
@@ -48,7 +49,9 @@ def run_tests(avs_devices, pb_device, pb_files):
         # Loop through files
         for file in pb_files:
             time.sleep(5)
-
+            for runner in runners:
+                runner.reset()
+                
             logger.info("Running Test: {}".format(file))
             play_wav(os.path.join('..', '..', 'audio', 'v1p7', file), pb_device)
 
@@ -57,7 +60,7 @@ def run_tests(avs_devices, pb_device, pb_files):
             logger.info("Test Complete: {}".format(file))
             for runner in runners:
                 logger.info("Count: {} - {} - {}".format(runner.get_count(), runner.label, runner.hostname))
-                runner.reset_count()
+                
             logger.info('**************************')
             
             for runner in runners:
@@ -87,4 +90,9 @@ if __name__ == '__main__':
                             help='Config JSON file')
 
     (avs_devices, pb_device, pb_files) = get_args(argparser.parse_args())
+
+    subprocess.call(["mosquitto_pub", "-t", "bored_room/door", "-m", "busy"])
+
     run_tests(avs_devices, pb_device, pb_files)
+
+    subprocess.call(["mosquitto_pub", "-t", "bored_room/door", "-m", "idle"])

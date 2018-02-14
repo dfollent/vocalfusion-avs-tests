@@ -31,51 +31,20 @@ def play_wav(pb_filename, pb_dev_name):
       print "ERROR: only support 16 or 32-bit audio"
       sys.exit(1)
 
-    n_frames = wav_to_play.getnframes()
-    n_channels = wav_to_play.getnchannels()
-    play_framerate = wav_to_play.getframerate()
-    data = wav_to_play.readframes(n_frames)
-    samples = numpy.array(struct.unpack(struct_format_str.format(n_frames*n_channels), data))
 
-    def out_stream_callback(in_data, frame_count, time_info, status):
-        global index, repeat
-        n_samples = frame_count*n_channels
-
-        npdata = samples[index:index+n_samples]
-        data = npdata.tolist()
-
-        outstanding = n_samples - len(data)
-        if outstanding > 0:
-          # Running off the end of the audio
-          repeat -= 1
-          if repeat > 0:
-            npdata = samples[0:outstanding]
-            data += npdata.tolist()
-            index = outstanding
-        else:
-          index = index + n_samples
-
-        data = struct.pack(struct_format_str.format(len(data)), *data)
-        return (data, pyaudio.paContinue)
-
-
-    out_stream = audio_manager.open(format=audio_manager.get_format_from_width(
-                                        wav_to_play.getsampwidth()),
+    out_stream = audio_manager.open(format=audio_manager.get_format_from_width(samp_width),
                                     channels=wav_to_play.getnchannels(),
-                                    rate=play_framerate,
-                                    input=False, output=True,
-                                    frames_per_buffer=CHUNK_SIZE,
-                                    output_device_index=pb_dev_index,
-                                    stream_callback=out_stream_callback)
+                                    rate=wav_to_play.getframerate(),
+                                    output=True)
 
-    # Wait for file to finish or Ctrl+C to be pressed
-    try:
-        out_stream.start_stream()
-        while out_stream.is_active():
-            time.sleep(0.1)
+    data = wav_to_play.readframes(CHUNK_SIZE)
 
-    except KeyboardInterrupt:
-        pass
+    while len(data) > 0:
+        out_stream.write(data)
+        data = wav_to_play.readframes(CHUNK_SIZE)
+
+
+
 
     out_stream.stop_stream()
     out_stream.close()
