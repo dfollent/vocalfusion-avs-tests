@@ -20,12 +20,18 @@ def get_json(file):
 def get_args(args):
     input_dict = get_json(args.config)
     avs_devices = input_dict['listening_devices']
-    pb_device = input_dict['playback_device']
-    pb_files = input_dict['playback_files']
-    return avs_devices, pb_device, pb_files
+    pb_device = input_dict['playback']['device']
+    pb_files = input_dict['playback']['files']
 
-def run_tests(avs_devices, pb_device, pb_files):
-    
+    if 'iterations' in input_dict['playback']:
+        iterations = input_dict['playback']['iterations']
+    else:
+        iterations = 1
+
+    return avs_devices, pb_device, pb_files, iterations
+
+def run_tests(avs_devices, pb_device, pb_files, loop_count):
+
     file_name = "{}_test_results".format(datetime.now().strftime('%Y%m%d'))
     file_path = 'logs'
 
@@ -46,29 +52,28 @@ def run_tests(avs_devices, pb_device, pb_files):
         for runner in runners:
             runner.start()
 
-        # Loop through files
-        for file in pb_files:
-            time.sleep(5)
-            for runner in runners:
-                runner.reset()
-                
-            logger.info("Running Test: {}".format(file))
-            play_wav(os.path.join('..', '..', 'audio', 'v1p7', file), pb_device)
+        # Loop through file list
+        for x in range(1, loop_count):
+            # Loop through files
+            for file in pb_files:
+                time.sleep(5)
+                for runner in runners:
+                    runner.reset()
 
-            time.sleep(5)
-            logger.info('**************************')
-            logger.info("Test Complete: {}".format(file))
-            for runner in runners:
-                logger.info("Count: {} - {} - {}".format(runner.get_count(), runner.label, runner.hostname))
-                
-            logger.info('**************************')
-            
-            for runner in runners:
-                if runner.connected is False:
-                    raise Exception("Runner disconnected - {} - {}".format(runner.label, runner.hostname))
-                    # logger.error("ERROR: Runner disconnected - {} - {}".format(runner.label, runner.hostname))
-                    # runner.start()
+                logger.info("Running Test: {}".format(file))
+                play_wav(file, pb_device)
 
+                time.sleep(5)
+                logger.info('**************************')
+                logger.info("Test Complete: {}".format(file))
+                for runner in runners:
+                    logger.info("Count: {} - {} - {}".format(runner.get_count(), runner.label, runner.hostname))
+
+                logger.info('**************************')
+
+                for runner in runners:
+                    if runner.connected is False:
+                        raise Exception("Runner disconnected - {} - {}".format(runner.label, runner.hostname))
 
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt")
@@ -76,7 +81,7 @@ def run_tests(avs_devices, pb_device, pb_files):
     except Exception as e:
         logger.info("Exception:")
         logger.info(str(e))
-        # traceback.print_exc()
+        traceback.print_exc()
 
 
     finally:
@@ -89,10 +94,10 @@ if __name__ == '__main__':
                             default=None,
                             help='Config JSON file')
 
-    (avs_devices, pb_device, pb_files) = get_args(argparser.parse_args())
+    (avs_devices, pb_device, pb_files, iterations) = get_args(argparser.parse_args())
 
     subprocess.call(["mosquitto_pub", "-t", "bored_room/door", "-m", "busy"])
 
-    run_tests(avs_devices, pb_device, pb_files)
+    run_tests(avs_devices, pb_device, pb_files, iterations)
 
     subprocess.call(["mosquitto_pub", "-t", "bored_room/door", "-m", "idle"])

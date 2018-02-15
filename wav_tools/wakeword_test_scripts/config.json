@@ -1,14 +1,16 @@
 {
-  "playback_files":[
-    "cleanv1.7_SoundRoomCalibrated.wav",
-    "Music-6dbv1.7_SoundRoomCalibrated.wav",
-    "Music-3dbv1.7_SoundRoomCalibrated.wav",
-    "Music-0dbv1.7_SoundRoomCalibrated.wav",
-    "Kitchen-6dbv1.7_SoundRoomCalibrated.wav",
-    "Kitchen-3dbv1.7_SoundRoomCalibrated.wav",
-    "Kitchen-0dbv1.7_SoundRoomCalibrated.wav"
-  ],
-  "playback_device":"xCORE-AUDIO Hi-Res 2",
+  "playback":{
+     "device":"xCORE-AUDIO Hi-Res 2",
+     "files":[
+      "cleanv1.7_SoundRoomCalibrated.wav",
+      "Music-6dbv1.7_SoundRoomCalibrated.wav",
+      "Music-3dbv1.7_SoundRoomCalibrated.wav",
+      "Music-0dbv1.7_SoundRoomCalibrated.wav",
+      "Kitchen-6dbv1.7_SoundRoomCalibrated.wav",
+      "Kitchen-3dbv1.7_SoundRoomCalibrated.wav",
+      "Kitchen-0dbv1.7_SoundRoomCalibrated.wav"
+     ]
+  },
   "listening_devices":[
     {
       "label":"AVS v1.4 Stereo I2S 1",
@@ -17,8 +19,7 @@
       "password":"raspberry",
       "cmd":"avsrun",
       "wakeword":"Listening..."
-    }
-    ,
+    },
     {
       "label":"AVS v1.4 Stereo I2S 2",
       "ip":"10.0.77.178",

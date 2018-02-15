@@ -3,11 +3,38 @@ import sys
 import pyaudio
 import time
 import wave
-import numpy
 import struct
 
 
-from play_record_wav import get_audio_devices
+def select_device(audio_manager, dev_name, dev_type):
+    dev_count = audio_manager.get_device_count()
+
+    dev_index = -1
+    dev_found = False
+    for i in range(dev_count):
+        if dev_name in audio_manager.get_device_info_by_index(i)['name']:
+            print "Selecting " + dev_type + " device:" + audio_manager.get_device_info_by_index(i)['name']
+            dev_index = i
+            dev_found = True
+            break
+
+    if dev_found == False:
+      print "ERROR: {} device not found".format(dev_type)
+      print "  Available devices are:"
+      for i in range(dev_count):
+        print "    {}".format(audio_manager.get_device_info_by_index(i)['name'])
+      sys.exit(1)
+
+    return dev_index
+
+def get_audio_devices(audio_manager, pb_dev_name, rec_dev_name):
+    pb_dev_index = select_device(audio_manager, pb_dev_name, 'Playback')
+    if rec_dev_name is None:
+      rec_dev_index = -1
+    else:
+      rec_dev_index = select_device(audio_manager, rec_dev_name, 'Recording')
+
+    return (pb_dev_index, rec_dev_index)
 
 
 
