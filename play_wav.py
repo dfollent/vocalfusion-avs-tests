@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import sys
 import pyaudio
-import time
 import wave
 import struct
 
