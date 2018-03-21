@@ -6,33 +6,12 @@ import subprocess
 import ssh_runner
 import play_wav
 import time
-import datetime
+from datetime import datetime
 import json
 import traceback
-import logging
+import logger
 
-OUTPUT_PATH = 'logs'
-
-def get_logger(name, filepath, level=logging.DEBUG, console=False):
-    try:
-        os.makedirs(filepath)
-    except Exception:
-        pass
-
-    formatter = logging.Formatter('%(asctime)s - %(message)s', '%Y-%m-%d %H:%M:%S')
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    fh = logging.FileHandler('{}/{}.log'.format(filepath, name), mode='a')
-    fh.setLevel(level)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-    if console:
-        ch = logging.StreamHandler()
-        ch.setLevel(level)
-        ch.setFormatter(formatter)
-        logger.addHandler(ch)
-
-    return logger
+OUTPUT_PATH = 'avs_test_logs'
 
 def get_json(file):
     with open(file, 'r') as f:
@@ -57,8 +36,8 @@ def run_tests(avs_devices, pb_device, pb_files, loop_count):
     ssh_output = "{}_{}_{}".format(datetime.now().strftime('%Y%m%d'),
                                    label.replace(" ","_").replace(".","_"),
                                    ipaddress.replace(".","_"))
-    logger = get_logger(test_file_name, OUTPUT_PATH, console=True)
-    ssh_logger = get_logger(ssh_output, OUTPUT_PATH)
+    logger = logger.get_logger(test_file_name, OUTPUT_PATH, console=True)
+    ssh_logger = logger.get_logger(ssh_output, OUTPUT_PATH)
     runners = []
 
     try:
