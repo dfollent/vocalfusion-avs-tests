@@ -12,7 +12,7 @@ def select_device(audio_manager, dev_name, dev_type):
     dev_found = False
     for i in range(dev_count):
         if dev_name in audio_manager.get_device_info_by_index(i)['name']:
-            print "Selecting " + dev_type + " device:" + audio_manager.get_device_info_by_index(i)['name']
+            # print "Selecting " + dev_type + " device:" + audio_manager.get_device_info_by_index(i)['name']
             dev_index = i
             dev_found = True
             break

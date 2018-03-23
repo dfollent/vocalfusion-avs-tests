@@ -88,7 +88,7 @@ class ssh_runner():
                                                       self.label,
                                                       line)
 
-                    print '{} {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), output)
+                    # print '{} {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), output)
                     self.logger.info(output)
 
         except Exception as e:
