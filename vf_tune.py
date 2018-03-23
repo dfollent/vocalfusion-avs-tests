@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import signal
 import argparse
 import subprocess
 import ssh_runner
@@ -6,8 +7,9 @@ import time
 import datetime
 import traceback
 import parameters
-import logger
+import log_utils
 from pexpect import pxssh
+import pexpect
 
 OUTPUT_PATH = 'vf_tune_logs'
 
@@ -42,6 +44,9 @@ def set_parameters(parameters):
     ssh.login('10.0.77.168', 'pi', 'raspberry')
     ctrl_util = "~/lib_xbeclear/lib_xbeclear/host/control/bin/vfctrl_i2c "
 
+    ssh.sendline(ctrl_util + 'AGCGAIN ' + str(1))
+    ssh.sendline(ctrl_util + 'AGCONOFF ' + str(0))
+
     for parameter in parameters.list:
         cmd = ctrl_util + parameter.cmd + ' ' + str(parameter.value)
         ssh.sendline(cmd)
@@ -53,7 +58,7 @@ def run_avs(candidate, test_logger):
     pdm_play_cmd = ['/Users/danielf/vocalfusion/host_pdm_test_tools/pdm_play/bin/pdm_play', '-p', music_path]
 
 
-    ssh_logger = logger.get_logger(candidate.get_string(), OUTPUT_PATH)
+    ssh_logger = log_utils.get_logger(candidate.get_string(), OUTPUT_PATH)
     test_logger.info("New Test:")
 
     runner = ssh_runner.ssh_runner(candidate.get_string(),
@@ -70,7 +75,7 @@ def run_avs(candidate, test_logger):
             reset_device(test_logger)
             set_parameters(candidate.parameters)
             break
-        catch pexpect.pxssh.ExceptionPxssh as e:
+        except pexpect.pxssh.ExceptionPxssh as e:
             test_logger.error(str(e))
             test_logger.error(traceback.format_tb())
             if i == ssh_attempts-1:
@@ -89,6 +94,7 @@ def run_avs(candidate, test_logger):
         test_logger.info(candidate.get_string())
 
     except KeyboardInterrupt:
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         runner.stop()
         raise
     except Exception as e:
@@ -100,8 +106,13 @@ def run_avs(candidate, test_logger):
 def generatePopulation():
     population = []
 
-    population.append(vf_test(3, 60, 0.99, 0.5, 3.0, 0, 3.0, 0)) #41, 41, 44
-    population.append(vf_test(3, 60, 0.99, 0.5, 3.0, 0, 3.0, 0))
+
+    population.append(vf_test(1, 31.69, 0.082, 0.4444, 0.95, 0.036, 0.852, 0.331)) #49, 34
+
+
+    population.append(vf_test(1, 31.6, 0.001, 0.982401, 3, 0.3, 1.0, 0.15)) #49, 34
+    # population.append(vf_test(3, 60, 0.99, 0.5, 3.0, 0, 3.0, 0)) #41, 41, 44
+    # population.append(vf_test(3, 60, 0.99, 0.5, 3.0, 0, 3.0, 0))
 
     # population.append(vf_test(1, 31.6, 0.001, 0.982401, 1.1, 0.3, 1.0, 0.15)) #37, 40
     #
@@ -149,7 +160,7 @@ def generatePopulation():
 if __name__ == '__main__':
 
     output_file_name = "{}_test_results".format(datetime.datetime.now().strftime('%Y%m%d'))
-    test_logger = logger.get_logger(output_file_name, OUTPUT_PATH, console=True)
+    test_logger = log_utils.get_logger(output_file_name, OUTPUT_PATH, console=True)
 
     population = generatePopulation()
     for candidate in population:
