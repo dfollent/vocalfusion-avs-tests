@@ -1,0 +1,21 @@
+{
+  "playback":{
+     "device":"xCORE-AUDIO Hi-Res 2",
+     "files":[],
+  },
+  "listening_devices":{
+      "label":"",
+      "ip":"10.0.0.0",
+      "username":"pi",
+      "password":"raspberry",
+      "cmd":"avsrun",
+      "wakeword":"Listening...",
+      "reboot_cmd":"~/sw_vocalfusion/host/dfu_control/bin/dfu_i2c reboot",
+      "ctrl_util":"~/lib_xbeclear/lib_xbeclear/host/control/bin/vfctrl_i2c"
+  },
+  "bayesian_model":{
+    "init_points":"0",
+    "n_iterations":"0",
+    "kappa":"1"
+  }
+}

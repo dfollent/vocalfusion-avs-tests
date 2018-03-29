@@ -8,6 +8,11 @@ import subprocess
 import traceback
 import time
 import play_wav
+import argparse
+import csv
+import os
+import errno
+
 
 OUTPUT_PATH = 'vf_tune_logs'
 
@@ -19,74 +24,104 @@ PARAM_DICT = {'HPFONOFF': (0, 3),
               'MIN_NN': (0.0 ,1.0),
               'GAMMA_NS': (0.0, 3.0),
               'MIN_NS': (0.0, 1.0)}
- 
-PI_IP_ADDRESS = '10.128.20.13' #'10.0.77.168'
-PI_USER = 'pi'
-PI_PASSWORD = 'raspberry'
-PB_DEVICE = "xCORE-AUDIO Hi-Res 2"
+
+PI_LABEL = ''
+PI_IPADDRESS = ''
+PI_USER = ''
+PI_PASSWORD = ''
+PI_AVS_CMD = ''
+PI_AVS_WW = ''
+PB_DEVICE = ''
+PB_FILE = ''
+VF_REBOOT_CMD = ''
+VF_CTRL_UTIL = ''
+
+def write_rows(writer, rows):
+    for row in rows:
+        writer.writerow(row)
+
+def export_data(data_dict, output_file):
+    if output_file is None or data_dict is None or not data_dict['params']:
+        return
+
+    with open(output_file, "a+b") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([PI_LABEL, PB_FILE])
+        writer.writerow(list(data_dict['params'][0].keys()) + [data_dict.keys()[1]])
+        write_rows(writer, [l.values()+[data_dict['values'][i]] for i, l in enumerate(data_dict['params'])])
+
+
+def get_data(input_file, remove_results=False):
+    data_dict = {}
+    with open(input_file, "r+b") as csvfile:
+        reader = csv.reader(csvfile)
+        data_dict = {z[0]:filter(None, list(z[1:])) for z in zip(*reader)}
+        data_dict = dict((key, val) for key, val in data_dict.iteritems() if val) # Remove empty keys
+        for key in data_dict:
+            data_dict[key] = map(float, data_dict[key]) # Cast from string to float
+
+    if remove_results:
+        data_dict.pop('values', None)
+
+    return data_dict
+
+def format_for_init(data_dict):
+    data_dict['target'] = data_dict.pop('values', None)
 
 def reset_device():
     ssh = pxssh.pxssh(timeout=None, ignore_sighup=False)
-    ssh.login(PI_IP_ADDRESS, PI_USER, PI_PASSWORD)
-    reboot_cmd = "~/sw_vocalfusion/host/dfu_control/bin/dfu_i2c reboot"
-    ssh.sendline(reboot_cmd)
+    ssh.login(PI_IPADDRESS, PI_USER, PI_PASSWORD)
+    ssh.sendline(VF_REBOOT_CMD)
     ssh.logout()
 
 def set_parameters(HPFONOFF, AGCMAXGAIN, AGCDESIREDLEVEL, AGCTIME, GAMMA_NN, MIN_NN, GAMMA_NS, MIN_NS):
-    ctrl_util = "~/lib_xbeclear/lib_xbeclear/host/control/bin/vfctrl_i2c "
     ssh = pxssh.pxssh(timeout=None, ignore_sighup=False)
-    ssh.login(PI_IP_ADDRESS, PI_USER, PI_PASSWORD)
+    ssh.login(PI_IPADDRESS, PI_USER, PI_PASSWORD)
 
-    ssh.sendline(ctrl_util + 'HPFONOFF ' + str(HPFONOFF))
-    ssh.sendline(ctrl_util + 'AGCMAXGAIN ' + str(AGCMAXGAIN))
-    ssh.sendline(ctrl_util + 'AGCDESIREDLEVEL ' + str(AGCDESIREDLEVEL))
-    ssh.sendline(ctrl_util + 'AGCTIME ' + str(AGCTIME))
-    ssh.sendline(ctrl_util + 'GAMMA_NN ' + str(GAMMA_NN))
-    ssh.sendline(ctrl_util + 'MIN_NN ' + str(MIN_NN))
-    ssh.sendline(ctrl_util + 'GAMMA_NS ' + str(GAMMA_NS))
-    ssh.sendline(ctrl_util + 'MIN_NS ' + str(MIN_NS))
+    ssh.sendline(VF_CTRL_UTIL + ' HPFONOFF ' + str(HPFONOFF))
+    ssh.sendline(VF_CTRL_UTIL + ' AGCMAXGAIN ' + str(AGCMAXGAIN))
+    ssh.sendline(VF_CTRL_UTIL + ' AGCDESIREDLEVEL ' + str(AGCDESIREDLEVEL))
+    ssh.sendline(VF_CTRL_UTIL + ' AGCTIME ' + str(AGCTIME))
+    ssh.sendline(VF_CTRL_UTIL + ' GAMMA_NN ' + str(GAMMA_NN))
+    ssh.sendline(VF_CTRL_UTIL + ' MIN_NN ' + str(MIN_NN))
+    ssh.sendline(VF_CTRL_UTIL + ' GAMMA_NS ' + str(GAMMA_NS))
+    ssh.sendline(VF_CTRL_UTIL + ' MIN_NS ' + str(MIN_NS))
     ssh.logout()
 
 
-def run_test(HPFONOFF, AGCMAXGAIN, AGCDESIREDLEVEL, AGCTIME, GAMMA_NN, MIN_NN, GAMMA_NS, MIN_NS):
+def run(HPFONOFF, AGCMAXGAIN, AGCDESIREDLEVEL, AGCTIME, GAMMA_NN, MIN_NN, GAMMA_NS, MIN_NS):
     HPFONOFF_round = round(HPFONOFF)
-    music_path = '/Users/xmos/sandboxes/vocalfusion-tests-scratch/audio/v1p7/Short_Test.wav'
-    pdm_play_cmd = ['/Users/danielf/vocalfusion/host_pdm_test_tools/pdm_play/bin/pdm_play', '-p', music_path]
-
-    test_label = "{}_{}_{}_{}_{}_{}_{}_{}_{}".format(datetime.datetime.now().strftime('%Y%m%d'), HPFONOFF_round, AGCMAXGAIN, AGCDESIREDLEVEL, AGCTIME, GAMMA_NN, MIN_NN, GAMMA_NS, MIN_NS)
+    test_label = "{}_{}_{}_{}_{}_{}_{}_{}_{}_{}_{}".format(datetime.datetime.now().strftime('%Y%m%d'),
+                                                           PI_LABEL, PB_FILE, HPFONOFF_round, AGCMAXGAIN,
+                                                           AGCDESIREDLEVEL, AGCTIME, GAMMA_NN, MIN_NN,
+                                                           GAMMA_NS, MIN_NS)
 
     ssh_logger = log_utils.get_logger(test_label, OUTPUT_PATH)
-
-
     runner = ssh_runner.ssh_runner(test_label,
-                        PI_IP_ADDRESS,
-                        PI_USER,
-                        PI_PASSWORD,
-                        'Listening...',
-                        'avsrun',
-                        ssh_logger)
-
-
+                                   PI_IPADDRESS,
+                                   PI_USER,
+                                   PI_PASSWORD,
+                                   PI_AVS_WW,
+                                   PI_AVS_CMD,
+                                   ssh_logger)
     result = 0
     try:
         runner.start()
-        # process = subprocess.Popen(pdm_play_cmd)
-        # process.communicate()
         time.sleep(5)
-        ssh_attempts = 3
+
+        ssh_attempts = 5
         for i in range(ssh_attempts):
             try:
                 reset_device()
-                set_parameters(HPFONOFF_round, AGCMAXGAIN, AGCDESIREDLEVEL, AGCTIME, GAMMA_NN, MIN_NN, GAMMA_NS, MIN_NS)
+                set_parameters(HPFONOFF_round, AGCMAXGAIN, AGCDESIREDLEVEL,
+                               AGCTIME, GAMMA_NN, MIN_NN, GAMMA_NS, MIN_NS)
                 break
             except pexpect.pxssh.ExceptionPxssh as e:
-                print(str(e))
-                print(traceback.format_tb())
+                time.sleep(5)
                 if i == ssh_attempts-1:
                     raise
 
-
-        play_wav.play_wav(music_path, PB_DEVICE)
+        play_wav.play_wav(PB_FILE, PB_DEVICE)
 
         time.sleep(5)
         runner.stop()
@@ -103,18 +138,54 @@ def run_test(HPFONOFF, AGCMAXGAIN, AGCDESIREDLEVEL, AGCTIME, GAMMA_NN, MIN_NN, G
 
     return result
 
+
+def optimize(model, input_file, explore_file, output_file):
+    bo = BayesianOptimization(run, PARAM_DICT)
+
+    if input_file is not None and os.path.isfile(input_file):
+        input_data = get_data(input_file)
+        format_for_init(input_data)
+        bo.initialize(input_data)
+
+    if explore_file is not None and os.path.isfile(explore_file):
+        explore_data = get_data(explore_file, remove_results=True)
+        bo.explore(explore_data)
+
+    bo.maximize(init_points=model["init_points"], n_iter=model["n_iterations"], kappa=model["kappa"])
+    export_data(bo.res['all'], output_file)
+
+
 def main():
 
-    results_logger = log_utils.get_logger("{}_vf_opt_results".format(datetime.datetime.now().strftime('%Y%m%d')), OUTPUT_PATH, console=True)
-    bo = BayesianOptimization(run_test, PARAM_DICT)
+    parser = argparse.ArgumentParser(description='Bayesian Optimization of VocalFusion parameters')
+    argparser.add_argument('config', default=None, help='Config JSON file containing RPi, playback and bayesian model parameters')
+    parser.add_argument('--output', '-o', help='Output CSV file')
+    parser.add_argument('--input', '-i', help='Input CSV file')
+    parser.add_argument('--explore', '-e', help='CSV file containing data points to explore')
 
-    bo.maximize(init_points=10, n_iter=80, kappa=4)
+    args = parser.parse_args()
 
-    results_logger.info('Max Result:')
-    results_logger.info(bo.res['max'])
-    results_logger.info('All Results:')
-    results_logger.info(bo.res['all'])
-   
+    if args.input is not None and not os.path.isfile(args.input):
+        raise Exception("Error - cannot find input file '{}'".format(args.input))
+
+    if args.explore is not None and not os.path.isfile(args.explore):
+        raise Exception("Error - cannot find explore input file '{}'".format(args.explore))
+
+    global PI_LABEL = args.config["listening_devices"]["label"]
+    global PI_IPADDRESS = args.config["listening_devices"]["ip"]
+    global PI_USER = args.config["listening_devices"]["username"]
+    global PI_PASSWORD = args.config["listening_devices"]["password"]
+    global PI_AVS_CMD = args.config["listening_devices"]["cmd"]
+    global PI_AVS_WW = args.config["listening_devices"]["wakeword"]
+    global PB_DEVICE = args.config["playback"]["device"]
+    global VF_REBOOT_CMD = args.config["listening_devices"]["reboot_cmd"]
+    global VF_CTRL_UTIL = args.config["listening_devices"]["ctrl_util"]
+
+    for file in args.config['playback']['files']:
+        global PB_FILE = file
+        optimize(args.config["bayesian_model"], args.input, args.explore, args.output)
+
+
 
 if __name__ == '__main__':
     main()
