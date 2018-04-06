@@ -13,10 +13,10 @@ import pyaudio
 import wave
 
 
-MAX_VOLUME = 60
+MAX_VOLUME = 70
 STEPS = 60
 EPSILON = 0.5
-REQ_STABILITY = 10
+REQ_STABILITY = 7
 
 class spl_meter():
     def __init__(self, cmd):
@@ -24,7 +24,6 @@ class spl_meter():
         self._stop_event = threading.Event()
         self.cmd = cmd
         self.thread = stoppable_thread(target=self.run)
-        self.lock = threading.Lock()
         self.running = False
 
     def start(self):
@@ -124,27 +123,17 @@ def get_audio_stream(pb_file, pb_device):
 
 def plot(time_list, feedback_list, volume_list):
     time_sm = np.array(time_list)
-    # time_smooth = np.linspace(time_sm.min(), time_sm.max(), 300)
-    # feedback_smooth = spline(time_list, feedback_list, time_smooth)
-    # volume_smooth = spline(time_list, volume_list, time_smooth)
-
-    # plt.plot(time_smooth, feedback_smooth)
-    # plt.plot(time_smooth, volume_smooth)
     plt.plot(time_list, feedback_list, label='Feedback (dB)')
     plt.plot(time_list, volume_list, label='Volume')
     plt.legend()
-    # plt.legend(handles=[f, line_down])
-    #
-    # plt.xlim((0, length(feedback_list)+1))
     plt.ylim((min(min(feedback_list), min(volume_list))-1, max(max(feedback_list), max(volume_list))+1))
     plt.xlabel('Ticks (0.3s)')
     plt.ylabel('Levels')
     plt.title('SPL Calibration')
-
     plt.grid(True)
     plt.show()
 
-def run(spl_cmd, setpoint, pb_file, pb_device=None):
+def run(spl_cmd, setpoint, pb_file, pb_device=None, make_plot=False):
     spl = spl_meter(spl_cmd)
     spl.start()
     time.sleep(5)
@@ -208,17 +197,19 @@ def run(spl_cmd, setpoint, pb_file, pb_device=None):
         stream.close()
         wav_to_play.close()
         spl.stop()
-        plot(time_list, feedback_list, volume_list)
+        if make_plot:
+            plot(time_list, feedback_list, volume_list)
 
 def main():
     parser = argparse.ArgumentParser(description='Calibrate system to specified dB')
+    parser.add_argument('--device', '-d', help='Playback device')
+    parser.add_argument('--plot', '-p', action='store_true', default=False, help='Toggle plot')
     parser.add_argument('cmd', default=None, help='Command to run SPL device')
     parser.add_argument('pb_file', help='Playback file')
-    parser.add_argument('--device', '-d', help='Playback device')
     parser.add_argument('dB', type=float, help='Desired dB level')
     args = parser.parse_args()
 
-    run(args.cmd, args.dB, args.pb_file, args.device)
+    run(args.cmd, args.dB, args.pb_file, pb_device=args.device, make_plot=args.plot)
 
 
 if __name__ == '__main__':
