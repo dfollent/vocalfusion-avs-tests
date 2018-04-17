@@ -61,7 +61,8 @@ def play_wav(pb_filename, pb_dev_name):
     out_stream = audio_manager.open(format=audio_manager.get_format_from_width(samp_width),
                                     channels=wav_to_play.getnchannels(),
                                     rate=wav_to_play.getframerate(),
-                                    output=True)
+                                    output=True,
+                                    output_device_index=pb_dev_index)
 
     data = wav_to_play.readframes(CHUNK_SIZE)
 
