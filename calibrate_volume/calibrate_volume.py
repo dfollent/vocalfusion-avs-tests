@@ -1,4 +1,7 @@
-import os
+#!/usr/bin/env python2
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
+import log_utils
 import signal
 import subprocess
 import argparse
@@ -7,30 +10,30 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import spline
-from ssh_runner import stoppable_thread
-import play_wav
 import pyaudio
 import wave
 
 
-MAX_VOLUME = 70
-STEPS = 60
+MAX_VOLUME = 100
 EPSILON = 0.5
-REQ_STABILITY = 7
+REQ_STABILITY = 10
+
+dB_weights = ["dBA", "dBC", "dBZ"]
 
 class spl_meter():
-    def __init__(self, cmd):
+    def __init__(self, cmd, weight):
         self.value = 0.0
-        self._stop_event = threading.Event()
         self.cmd = cmd
-        self.thread = stoppable_thread(target=self.run)
+        self.thread = threading.Thread(target=self.run)
+        self._stop_event = threading.Event()
         self.running = False
+        self.weight_index = dB_weights.index[weight] if weight in dB_weights else 0
 
     def start(self):
         self.thread.start()
 
     def stop(self):
-        self.thread.stop()
+        self._stop_event.set()
         self.thread.join(timeout=2)
 
     def run(self):
@@ -40,11 +43,12 @@ class spl_meter():
             line = process.stdout.readline()
             if line != '':
                 self.running = True
-                self.value = (5*self.value + float(line)) / 6
+                new_val = float(line.split(',')[self.weight_index])
+                self.value = (3*self.value + new_val) / 4
             else:
                 break
 
-            if self.thread.stopped():
+            if self._stop_event.is_set():
                 break
 
         os.kill(process.pid, signal.SIGINT)
@@ -53,9 +57,9 @@ class spl_meter():
         return self.value
 
     def __del__(self):
-        self.thread.stop()
+        self._stop_event.set()
 
-def pi_controller(y, yc, h=1, Kp=1, Ti=1, u0=0, e0=0):
+def control_algo(y, yc, h=1, Kp=1, Ti=1, u0=0, e0=0):
 	"""Calculate System Input using a PI Controller
 
 	Arguments:
@@ -89,24 +93,44 @@ def pi_controller(y, yc, h=1, Kp=1, Ti=1, u0=0, e0=0):
 		yield u
 
 # Returns int in range 0 - 100
-def getVolume():
+def get_volume():
     cmd = ["osascript", "-e", "output volume of (get volume settings)"]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     line = process.stdout.readline()
     return float(line)
 
 # Set volume in range 0 - 100
-def setVolume(volume):
+def set_volume(volume):
     volume = min(round(volume), MAX_VOLUME)
     subprocess.call(["osascript", "-e", "set volume output volume {}".format(volume)])
 
+def select_device(audio_manager, dev_name, dev_type):
+    dev_count = audio_manager.get_device_count()
+
+    dev_index = -1
+    dev_found = False
+    for i in range(dev_count):
+        if dev_name in audio_manager.get_device_info_by_index(i)['name']:
+            dev_index = i
+            dev_found = True
+            break
+
+    if dev_found == False:
+      print "ERROR: {} device not found".format(dev_type)
+      print "  Available devices are:"
+      for i in range(dev_count):
+        print "    {}".format(audio_manager.get_device_info_by_index(i)['name'])
+      sys.exit(1)
+
+    return dev_index
+
 def get_audio_stream(pb_file, pb_device):
     audio_out = pyaudio.PyAudio()
-    wav_to_play = wave.open('white_noise.wav', 'rb')
+    wav_to_play = wave.open(pb_file, 'rb')
 
     audio_out_index = None
     if pb_device is not None:
-        audio_out_index = play_wav.select_device(audio_out, pb_device, 'Output')
+        audio_out_index = select_device(audio_out, pb_device, 'Output')
 
 
     def callback(in_data, frame_count, time_info, status):
@@ -127,14 +151,14 @@ def plot(time_list, feedback_list, volume_list):
     plt.plot(time_list, volume_list, label='Volume')
     plt.legend()
     plt.ylim((min(min(feedback_list), min(volume_list))-1, max(max(feedback_list), max(volume_list))+1))
-    plt.xlabel('Ticks (0.3s)')
+    plt.xlabel('Ticks (0.25s)')
     plt.ylabel('Levels')
     plt.title('SPL Calibration')
     plt.grid(True)
     plt.show()
 
-def run(spl_cmd, setpoint, pb_file, pb_device=None, make_plot=False):
-    spl = spl_meter(spl_cmd)
+def run(spl_cmd, setpoint, weight, pb_file, pb_device=None, make_plot=False):
+    spl = spl_meter(spl_cmd, weight)
     spl.start()
     time.sleep(5)
     if spl.running == False:
@@ -150,18 +174,17 @@ def run(spl_cmd, setpoint, pb_file, pb_device=None, make_plot=False):
     volume_list = []
 
     try:
-        volume = getVolume()
+        volume = get_volume()
         error = 0
         output = 0
         stability_count = 0
         feedback = 0
-        i = 1
-        # for i in range(1, STEPS):
+        time_step = 1
         while stream.is_active():
             feedback = spl.get_value()
             error = setpoint - feedback
 
-            input_generator = pi_controller(feedback, setpoint, h=0.3, Kp=0.2, Ti=3.5, e0=error)
+            input_generator = control_algo(feedback, setpoint, h=0.3, Kp=0.2, Ti=3.5, e0=error)
             output = next(input_generator)
 
             if abs(error) <= EPSILON and abs(output) <= EPSILON:
@@ -173,21 +196,20 @@ def run(spl_cmd, setpoint, pb_file, pb_device=None, make_plot=False):
 
             volume = volume + output
             adj_volume = min(100, max(0, round(volume)))
-            setVolume(adj_volume)
+            set_volume(adj_volume)
 
             feedback_list.append(feedback)
-            time_list.append(i)
+            time_list.append(time_step)
             volume_list.append(adj_volume)
-            # Guarantee loop period of 0.3s
-            time.sleep(0.3 - (time.time() % 0.3))
-            i += 1
+            time.sleep(0.25 - (time.time() % 0.25)) # Guarantee loop period of 0.25s
+            time_step += 1
 
-        if error > EPSILON or output > EPSILON:
-            print "Warning: calibration was unable to converge. Try adjusting control parameters."
+        if abs(error) > EPSILON or abs(output) > EPSILON:
+            print "WARNING calibration was unable to converge."
         else:
             print "Calibration complete."
-            print "dB: {0:.2f}".format(feedback)
-            print "Volume: {0:.0f}".format(round(volume))
+            print "dB:{0:.2f}".format(feedback)
+            print "Volume:{0:.0f}".format(round(volume))
     except KeyboardInterrupt:
         pass
     except Exception as e:
@@ -201,15 +223,16 @@ def run(spl_cmd, setpoint, pb_file, pb_device=None, make_plot=False):
             plot(time_list, feedback_list, volume_list)
 
 def main():
-    parser = argparse.ArgumentParser(description='Calibrate system to specified dB')
-    parser.add_argument('--device', '-d', help='Playback device')
-    parser.add_argument('--plot', '-p', action='store_true', default=False, help='Toggle plot')
-    parser.add_argument('cmd', default=None, help='Command to run SPL device')
+    parser = argparse.ArgumentParser(description='Calibrate system volume to specified dB as measured by SPL meter')
+    parser.add_argument('--device', '-d', help='Playback device (System sound output MUST be set to this device)')
+    parser.add_argument('--plot', '-p', action='store_true', default=False, help='Plot measured dB and volume level')
+    parser.add_argument('spl_cmd', default=None, help='Command to run SPL meter')
     parser.add_argument('pb_file', help='Playback file')
     parser.add_argument('dB', type=float, help='Desired dB level')
+    parser.add_argument('weight', choices=dB_weights)
     args = parser.parse_args()
 
-    run(args.cmd, args.dB, args.pb_file, pb_device=args.device, make_plot=args.plot)
+    run(args.spl_cmd, args.dB, args.weight, args.pb_file, pb_device=args.device, make_plot=args.plot)
 
 
 if __name__ == '__main__':

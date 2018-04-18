@@ -12,12 +12,12 @@ kill_commands = {
     'avsrun':'q'
 }
 
-class stoppable_thread(threading.Thread):
+class StoppableThread(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check
     regularly for the stopped() condition."""
 
     def __init__(self, target=None):
-        super(stoppable_thread, self).__init__(target=target)
+        super(StoppableThread, self).__init__(target=target)
         self._stop_event = threading.Event()
 
     def stop(self):
@@ -26,7 +26,7 @@ class stoppable_thread(threading.Thread):
     def stopped(self):
         return self._stop_event.is_set()
 
-class ssh_runner():
+class SshRunner():
     """SSH Runner class. Runs a threaded command to a specified ssh target."""
 
     def __init__(self, label, ipaddress, username, password, wakeword, cmd, logger=None):
@@ -34,7 +34,7 @@ class ssh_runner():
         self.hostname = ipaddress
         self.username = username
         self.password = password
-        self.t = stoppable_thread(target=self.run)
+        self.t = StoppableThread(target=self.run)
         self.lock = threading.Lock()
         self.connected = False
         self.ssh = pexpect.pxssh.pxssh(timeout=None, ignore_sighup=False)

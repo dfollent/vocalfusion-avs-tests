@@ -1,25 +1,27 @@
-#!/usr/bin/env python
-import sys
-import os
-import argparse
-import subprocess
+#!/usr/bin/env python2
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
+import log_utils
 import ssh_runner
 import play_wav
+import argparse
+import subprocess
 import time
 from datetime import datetime
 import json
 import traceback
-import logger
-
-OUTPUT_PATH = 'avs_test_logs'
 
 def get_json(file):
     with open(file, 'r') as f:
         return json.load(f)
 
 def get_args(args):
-    input_dict = get_json(args.config)
-    avs_devices = input_dict['listening_devices']
+    try:
+        input_dict = get_json(args.config)
+    except Exception as e:
+        print "Error parsing JSON file!"
+        raise
+
     pb_device = input_dict['playback']['device']
     pb_files = input_dict['playback']['files']
 
@@ -31,28 +33,27 @@ def get_args(args):
     return avs_devices, pb_device, pb_files, iterations
 
 def run_tests(avs_devices, pb_device, pb_files, loop_count):
-
-    test_output = "{}_test_results".format(datetime.now().strftime('%Y%m%d'))
+    test_output = "{}_avs_tester".format(datetime.now().strftime('%Y%m%d'))
     ssh_output = "{}_{}_{}".format(datetime.now().strftime('%Y%m%d'),
                                    label.replace(" ","_").replace(".","_"),
                                    ipaddress.replace(".","_"))
-    logger = logger.get_logger(test_file_name, OUTPUT_PATH, console=True)
-    ssh_logger = logger.get_logger(ssh_output, OUTPUT_PATH)
+    logger = log_utils.get_logger(test_file_name, 'logs', console=True)
+    ssh_logger = log_utils.get_logger(ssh_output, 'ssh_logs')
     runners = []
 
     try:
         subprocess.call(["mosquitto_pub", "-t", "bored_room/door", "-m", "busy"])
 
         for device in avs_devices:
-            runners.append(ssh_runner.ssh_runner(device.get('label'),
-                                           device.get('ip'),
-                                           device.get('username'),
-                                           device.get('password'),
-                                           device.get('wakeword'),
-                                           device.get('cmd'),
-                                           ssh_logger))
-        for runner in runners:
-            runner.start()
+            runners.append(ssh_runner.SshRunner(device.get('label'),
+                                                device.get('ip'),
+                                                device.get('username'),
+                                                device.get('password'),
+                                                device.get('wakeword'),
+                                                device.get('cmd'),
+                                                ssh_logger))
+            for runner in runners:
+                runner.start()
 
         # Loop through file list
         for x in range(loop_count):
