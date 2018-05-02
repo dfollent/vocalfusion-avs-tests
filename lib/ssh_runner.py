@@ -40,6 +40,8 @@ class SshRunner():
         self.ssh = pexpect.pxssh.pxssh(timeout=None, ignore_sighup=False)
         self.start_cmd = cmd
         self.regex = re.compile(wakeword)
+        self.done_regex = re.compile("Done")
+
         self._counter = 0
         self.last_time = datetime.now()
 
@@ -71,25 +73,8 @@ class SshRunner():
                 if(self.t.stopped()):
                     self.logger.info("Stopped")
                     break
+                time.sleep(2)
 
-                line = self.ssh.readline().strip()
-                self.logger.info(line)
-
-                if self.regex.search(line):
-                    with self.lock:
-                        self._counter += 1
-
-                    now = datetime.now()
-                    time_diff_str = str(now - self.last_time).split('.')
-                    self.last_time = now
-
-                    output = '({}) ({:02}) ({}) {}'.format(time_diff_str[0],
-                                                      self._counter,
-                                                      self.label,
-                                                      line)
-
-                    # print '{} {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), output)
-                    self.logger.info(output)
 
         except Exception as e:
             self.logger.error(str(e))
@@ -108,12 +93,47 @@ class SshRunner():
             self.last_time = datetime.now()
 
     def get_count(self):
+        ssh_attempts = 5
+        for i in range(ssh_attempts):
+            try:
+                self._counter = 0
+                count_ssh = pexpect.pxssh.pxssh(timeout=None, ignore_sighup=False)
+                count_ssh.login(self.hostname, self.username, self.password)
+                count_ssh.sendline("nc -w 5 10.0.77.15 9999 < test.raw")
+
+                count_ssh.prompt()
+
+                lines = count_ssh.before
+
+                for line in lines.split('\n'):
+                    if self.regex.search(line.strip()):
+                        self._counter += 1
+
+
+                count_ssh.logout()
+                break
+            except pexpect.pxssh.ExceptionPxssh as e:
+                time.sleep(5)
+                if i == ssh_attempts-1:
+                    raise
+
+        connected = False
         return self._counter
+
+    def rename_track(self, track_name):
+        rename_ssh = pexpect.pxssh.pxssh(timeout=None, ignore_sighup=False)
+        rename_ssh.login(self.hostname, self.username, self.password)
+        rename_ssh.sendline("mv test.raw {}".format(track_name))
+
+        rename_ssh.prompt()
+        rename_ssh.logout()
+        return
+
 
     def stop(self):
         self.t.stop()
         try:
-            self.ssh.sendline(self.kill_cmd)
+            self.ssh.sendline(chr(3))
         except Exception:
             pass
         self.t.join(timeout=5)

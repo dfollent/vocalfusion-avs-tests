@@ -16,25 +16,35 @@ import json
 
 OUTPUT_PATH = 'logs'
 
+# PARAM_DICT = {'HPFONOFF': (0, 3),
+#               'AGCMAXGAIN': (0, 60),
+#               'AGCDESIREDLEVEL': (0, 1.0),
+#               'AGCTIME': (0.1, 1.0),
+#               'GAMMA_NN': (0.0, 3.0),
+#               'MIN_NN': (0.0 ,1.0),
+#               'GAMMA_NS': (0.0, 3.0),
+#               'MIN_NS': (0.0, 1.0)}
+
 PARAM_DICT = {'HPFONOFF': (0, 3),
-              'AGCMAXGAIN': (0, 60),
               'AGCDESIREDLEVEL': (0, 1.0),
               'AGCTIME': (0.1, 1.0),
-              'GAMMA_NN': (0.0, 3.0),
-              'MIN_NN': (0.0 ,1.0),
-              'GAMMA_NS': (0.0, 3.0),
-              'MIN_NS': (0.0, 1.0)}
+              'ECHOONOFF': (0.45, 0.55),
+              'AEC_REF_ATTEN': (-100, 0.0)}
 
 PI_LABEL = ''
 PI_IPADDRESS = ''
 PI_USER = ''
 PI_PASSWORD = ''
-PI_AVS_CMD = ''
+PI_APLAY_CMD = ''
+PI_AREC_CMD = ''
 PI_AVS_WW = ''
 PB_DEVICE = ''
-PB_FILE = []
+PB_FILE = ''
 VF_REBOOT_CMD = ''
 VF_CTRL_UTIL = ''
+DEVICE_VOL = ''
+WAIT_TIME = ''
+VOLUME = ''
 
 def get_json(file):
     with open(file, 'r') as f:
@@ -78,77 +88,89 @@ def reset_device():
     ssh.sendline(VF_REBOOT_CMD)
     ssh.logout()
 
-def set_parameters(HPFONOFF, AGCMAXGAIN, AGCDESIREDLEVEL, AGCTIME, GAMMA_NN, MIN_NN, GAMMA_NS, MIN_NS):
+def set_parameters(HPFONOFF, AGCDESIREDLEVEL, AGCTIME, ECHOONOFF, AEC_REF_ATTEN):
     ssh = pxssh.pxssh(timeout=None, ignore_sighup=False)
     ssh.login(PI_IPADDRESS, PI_USER, PI_PASSWORD)
 
     ssh.sendline(VF_CTRL_UTIL + ' HPFONOFF ' + str(HPFONOFF))
-    ssh.sendline(VF_CTRL_UTIL + ' AGCMAXGAIN ' + str(AGCMAXGAIN))
     ssh.sendline(VF_CTRL_UTIL + ' AGCDESIREDLEVEL ' + str(AGCDESIREDLEVEL))
     ssh.sendline(VF_CTRL_UTIL + ' AGCTIME ' + str(AGCTIME))
-    ssh.sendline(VF_CTRL_UTIL + ' GAMMA_NN ' + str(GAMMA_NN))
-    ssh.sendline(VF_CTRL_UTIL + ' MIN_NN ' + str(MIN_NN))
-    ssh.sendline(VF_CTRL_UTIL + ' GAMMA_NS ' + str(GAMMA_NS))
-    ssh.sendline(VF_CTRL_UTIL + ' MIN_NS ' + str(MIN_NS))
+    ssh.sendline(VF_CTRL_UTIL + ' ECHOONOFF ' + str(ECHOONOFF))
+    ssh.sendline(VF_CTRL_UTIL + ' AEC_REF_ATTEN ' + str(AEC_REF_ATTEN))
+
     ssh.logout()
 
 
-def run(HPFONOFF, AGCMAXGAIN, AGCDESIREDLEVEL, AGCTIME, GAMMA_NN, MIN_NN, GAMMA_NS, MIN_NS):
+def run(HPFONOFF, AGCDESIREDLEVEL, AGCTIME, ECHOONOFF, AEC_REF_ATTEN):
     HPFONOFF_round = round(HPFONOFF)
-    test_label = "{}_{}_{}_{}_{}_{}_{}_{}_{}_{}_{}".format(datetime.now().strftime('%Y%m%d'),
-                                                           PI_LABEL, PB_FILE, HPFONOFF_round, AGCMAXGAIN,
-                                                           AGCDESIREDLEVEL, AGCTIME, GAMMA_NN, MIN_NN,
-                                                           GAMMA_NS, MIN_NS)
+    ECHOONOFF_round = round(ECHOONOFF)
+    test_label = "{}_{}_HOO_{}_ADL_{}_AT_{}_EOO{}_MA_{}".format(datetime.now().strftime('%Y%m%d'),
+                                                           PI_LABEL, HPFONOFF_round, AGCDESIREDLEVEL, AGCTIME, ECHOONOFF_round, AEC_REF_ATTEN)
 
     ssh_logger = log_utils.get_logger(test_label, OUTPUT_PATH)
-    runner = ssh_runner.SshRunner(test_label,
+    rec_ssh_logger = log_utils.get_logger("{}_rec".format(test_label), OUTPUT_PATH)
+
+    aplay_runner = ssh_runner.SshRunner(test_label,
                                    PI_IPADDRESS,
                                    PI_USER,
                                    PI_PASSWORD,
                                    PI_AVS_WW,
-                                   PI_AVS_CMD,
+                                   PI_APLAY_CMD,
                                    ssh_logger)
+    arecord_runner = ssh_runner.SshRunner(test_label,
+                                   PI_IPADDRESS,
+                                   PI_USER,
+                                   PI_PASSWORD,
+                                   PI_AVS_WW,
+                                   PI_AREC_CMD,
+                                   rec_ssh_logger)
+
+    track_name = "V{}_T{}_HOO_{}_ADL_{}_AT_{}_EOO_{}_ARA_{}.raw".format(VOLUME, WAIT_TIME, HPFONOFF_round, AGCDESIREDLEVEL, AGCTIME, ECHOONOFF_round, AEC_REF_ATTEN)
+
     result = 0
     try:
-        runner.start()
-        time.sleep(5)
 
         ssh_attempts = 5
         for i in range(ssh_attempts):
             try:
                 reset_device()
-                set_parameters(HPFONOFF_round, AGCMAXGAIN, AGCDESIREDLEVEL,
-                               AGCTIME, GAMMA_NN, MIN_NN, GAMMA_NS, MIN_NS)
+                set_parameters(HPFONOFF_round, AGCDESIREDLEVEL, AGCTIME, ECHOONOFF_round, AEC_REF_ATTEN)
                 break
             except pxssh.ExceptionPxssh as e:
                 time.sleep(5)
                 if i == ssh_attempts-1:
                     raise
 
-        for file in PB_FILE:
-            play_wav.play_wav(file, PB_DEVICE)
-            time.sleep(5)
-            result = runner.get_count()
-            print (result - prev_result)
-            prev_result = result
+        arecord_runner.start()
+        aplay_runner.start()
 
-        print
-        runner.stop()
+        # Decide how long to wait
+        time.sleep(float(WAIT_TIME))
+
+
+        play_wav.play_wav(PB_FILE, PB_DEVICE)
+        aplay_runner.stop()
+        arecord_runner.stop()
+        time.sleep(1)
+        result = arecord_runner.get_count()
+        arecord_runner.rename_track(track_name)
 
     except KeyboardInterrupt:
-        runner.stop()
+        aplay_runner.stop()
+        arecord_runner.stop()
         raise
     except Exception as e:
         print(str(e))
         traceback.print_exc()
-        runner.stop()
+        aplay_runner.stop()
+        arecord_runner.stop()
         raise
 
     return result
 
 
 def optimize(model, input_file, explore_file, output_file):
-    bo = BayesianOptimization(run, PARAM_DICT)
+    bo = BayesianOptimization(run, pbounds=PARAM_DICT)
 
     if input_file is not None and os.path.isfile(input_file):
         input_data = get_data(input_file)
@@ -159,7 +181,9 @@ def optimize(model, input_file, explore_file, output_file):
         explore_data = get_data(explore_file, remove_results=True)
         bo.explore(explore_data)
 
-    bo.maximize(init_points=model["init_points"], n_iter=model["n_iterations"], kappa=model["kappa"])
+    # print "{} {} {}".format(int(model["init_points"]), int(model["n_iterations"]), int(model["kappa"]))
+
+    bo.maximize(init_points=int(model["init_rand_points"]), n_iter=int(model["n_iterations"]), kappa=int(model["kappa"]))
     export_data(bo.res['all'], output_file)
 
 
@@ -184,6 +208,7 @@ def main():
     except Exception as e:
         print "Error parsing JSON file!"
         print (str(e))
+        return
 
     global PI_LABEL
     PI_LABEL = input_dict["listening_devices"]["label"]
@@ -193,8 +218,10 @@ def main():
     PI_USER = input_dict["listening_devices"]["username"]
     global PI_PASSWORD
     PI_PASSWORD = input_dict["listening_devices"]["password"]
-    global PI_AVS_CMD
-    PI_AVS_CMD = input_dict["listening_devices"]["cmd"]
+    global PI_APLAY_CMD
+    PI_APLAY_CMD = input_dict["listening_devices"]["play_cmd"]
+    global PI_AREC_CMD
+    PI_AREC_CMD = input_dict["listening_devices"]["rec_cmd"]
     global PI_AVS_WW
     PI_AVS_WW = input_dict["listening_devices"]["wakeword"]
     global PB_DEVICE
@@ -202,12 +229,41 @@ def main():
     global VF_REBOOT_CMD
     VF_REBOOT_CMD = input_dict["listening_devices"]["reboot_cmd"]
     global VF_CTRL_UTIL
-    VF_CTRL_UTIL = input_dicta["listening_devices"]["ctrl_util"]
+    VF_CTRL_UTIL = input_dict["listening_devices"]["ctrl_util"]
+    global DEVICE_VOL
+    DEVICE_VOL = input_dict["device_volume"]
 
-    for file in input_dict['playback']['files']:
-        global PB_FILE
-        PB_FILE = file
-        optimize(input_dict["bayesian_model"], args.input, args.explore, args.output)
+
+    wait_times = input_dict["wait_time"]
+
+    for time in wait_times:
+        global WAIT_TIME
+        WAIT_TIME = time
+
+
+        for volume in DEVICE_VOL:
+            global VOLUME
+            VOLUME = volume
+
+            ssh_attempts = 5
+            for i in range(ssh_attempts):
+                try:
+                    # Set volume
+                    vol_ssh = pxssh.pxssh(timeout=None, ignore_sighup=False)
+                    vol_ssh.login(PI_IPADDRESS, PI_USER, PI_PASSWORD)
+                    vol_ssh.sendline("amixer sset 'Playback' {}%".format(volume))
+                    vol_ssh.logout()  
+                    break
+                except pxssh.ExceptionPxssh as e:
+                    time.sleep(5)
+                    if i == ssh_attempts-1:
+                        raise
+
+            global PB_FILE
+            PB_FILE = input_dict['playback']['files']
+
+            print "Running Test - Wait Time:{}s - Volume:{}%".format(time, volume)
+            optimize(input_dict["bayesian_model"], args.input, args.explore, "V{}_T{}_{}".format(volume, WAIT_TIME, args.output))
 
 
 

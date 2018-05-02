@@ -1,21 +1,24 @@
 {
+  "wait_time":["10", "30"],
+  "device_volume":["100", "80", "55"],
   "playback":{
      "device":"xCORE-AUDIO Hi-Res 2",
-     "files":[],
+     "files":"/Users/xmos/vocalfusion-avs-tests/vf_optimiser/cleanv1.7_SoundRoomCalibrated.wav"
   },
   "listening_devices":{
-      "label":"",
-      "ip":"10.0.0.0",
+      "label":"VF Stereo I2S 4mic",
+      "ip":"10.128.21.225",
       "username":"pi",
       "password":"raspberry",
-      "cmd":"avsrun",
-      "wakeword":"Listening...",
+      "play_cmd":"aplay ~/Desktop/HappyLeftETSIRockRightSample_10mins.wav",
+      "rec_cmd":"arecord -f S16_LE -r 16000 test.raw",
+      "wakeword":"beginIndex",
       "reboot_cmd":"~/sw_vocalfusion/host/dfu_control/bin/dfu_i2c reboot",
       "ctrl_util":"~/lib_xbeclear/lib_xbeclear/host/control/bin/vfctrl_i2c"
   },
   "bayesian_model":{
-    "init_points":"0",
-    "n_iterations":"0",
-    "kappa":"1"
+    "init_rand_points":"0",
+    "n_iterations":"5",
+    "kappa":"5"
   }
 }

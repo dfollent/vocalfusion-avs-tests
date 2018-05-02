@@ -46,6 +46,7 @@ def play_wav(pb_filename, pb_dev_name):
     audio_manager = pyaudio.PyAudio()
     pb_dev_index, rec_dev_index = get_audio_devices(audio_manager, pb_dev_name, None)
 
+
     wav_to_play = wave.open(pb_filename, 'rb')
     samp_width = wav_to_play.getsampwidth()
 
