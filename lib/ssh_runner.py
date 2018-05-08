@@ -1,31 +1,43 @@
 #!/usr/bin/env python
 import threading
-from stoppable_thread import stoppable_thread
-from pexpect import pxssh
 import pexpect
-import getpass
 import time
-from datetime import datetime
 import traceback
 import re
 import logging
+from datetime import datetime
+
 
 kill_commands = {
     'avsrun':'q'
 }
 
+class StoppableThread(threading.Thread):
+    """Thread class with a stop() method. The thread itself has to check
+    regularly for the stopped() condition."""
 
-class ssh_runner():
+    def __init__(self, target=None):
+        super(StoppableThread, self).__init__(target=target)
+        self._stop_event = threading.Event()
 
-    def __init__(self, label, ipaddress, username, password, wakeword, cmd, logpath):
+    def stop(self):
+        self._stop_event.set()
+
+    def stopped(self):
+        return self._stop_event.is_set()
+
+class SshRunner():
+    """SSH Runner class. Runs a threaded command to a specified ssh target."""
+
+    def __init__(self, label, ipaddress, username, password, wakeword, cmd, logger=None):
         self.label = label
         self.hostname = ipaddress
         self.username = username
         self.password = password
-        self.t = stoppable_thread(target=self.run)
+        self.t = StoppableThread(target=self.run)
         self.lock = threading.Lock()
         self.connected = False
-        self.ssh = pxssh.pxssh(timeout=None, ignore_sighup=False)
+        self.ssh = pexpect.pxssh.pxssh(timeout=None, ignore_sighup=False)
         self.start_cmd = cmd
         self.regex = re.compile(wakeword)
         self._counter = 0
@@ -36,16 +48,14 @@ class ssh_runner():
         else:
             self.kill_cmd = chr(3)   # Ctrl+C interrupt
 
-        # if self.start_cmd == 'avsrun':
-        #     self.kill_cmd = 'q'
-        # else:
-        #     self.kill_cmd = chr(3)   # Ctrl+C interrupt
-
-        file_name = "{}_{}_{}".format(datetime.now().strftime('%Y%m%d'), 
-                                   label.replace(" ","_").replace(".","_"),
-                                   ipaddress.replace(".","_"))
-
-        self.logger = get_logger(file_name, logpath)
+        if logger is not None:
+            self.logger = logger
+        else:
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.DEBUG)
+            ch.setFormatter(formatter)
+            self.logger = logging.getLogger(self.label)
+            self.logger.addHandler(ch)
 
 
     def start(self):
@@ -73,19 +83,18 @@ class ssh_runner():
                     time_diff_str = str(now - self.last_time).split('.')
                     self.last_time = now
 
-                    output = '({}) ({:02}) ({}) {}'.format(time_diff_str[0], 
-                                                      self._counter, 
-                                                      self.label, 
+                    output = '({}) ({:02}) ({}) {}'.format(time_diff_str[0],
+                                                      self._counter,
+                                                      self.label,
                                                       line)
 
-                    print '{} {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), output)
+                    # print '{} {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), output)
                     self.logger.info(output)
 
         except Exception as e:
-            # print "{} Exception:".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-            self.logger.info("Exception:")
-            # print "{} {}".format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), str(e))
-            self.logger.info(str(e))
+            self.logger.error(str(e))
+            self.logger.error(traceback.format_tb())
+
 
         finally:
             self.logger.info("Logging out")
@@ -114,28 +123,3 @@ class ssh_runner():
     def __del__(self):
         self.logger.info("Destructor called")
         self.t.stop()
-
-
-def get_logger(name, filepath):
-    try:
-        os.mkdir(filepath)
-    except Exception:
-        pass
-
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
-
-    fh = logging.FileHandler('{}/{}.log'.format(filepath, name), mode='a')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(logging.Formatter('%(asctime)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
-    logger.addHandler(fh)
-    return logger
-
-def get_printer_logger(name, filepath):
-    
-    logger = get_logger(name, filepath)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(logging.Formatter('%(asctime)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
-    logger.addHandler(ch)
-    return logger

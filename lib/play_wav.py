@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import sys
 import pyaudio
-import time
 import wave
 import struct
 
@@ -13,7 +12,7 @@ def select_device(audio_manager, dev_name, dev_type):
     dev_found = False
     for i in range(dev_count):
         if dev_name in audio_manager.get_device_info_by_index(i)['name']:
-            print "Selecting " + dev_type + " device:" + audio_manager.get_device_info_by_index(i)['name']
+            # print "Selecting " + dev_type + " device:" + audio_manager.get_device_info_by_index(i)['name']
             dev_index = i
             dev_found = True
             break
@@ -62,7 +61,8 @@ def play_wav(pb_filename, pb_dev_name):
     out_stream = audio_manager.open(format=audio_manager.get_format_from_width(samp_width),
                                     channels=wav_to_play.getnchannels(),
                                     rate=wav_to_play.getframerate(),
-                                    output=True)
+                                    output=True,
+                                    output_device_index=pb_dev_index)
 
     data = wav_to_play.readframes(CHUNK_SIZE)
 

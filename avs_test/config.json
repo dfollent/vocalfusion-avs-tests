@@ -9,7 +9,8 @@
       "Kitchen-6dbv1.7_SoundRoomCalibrated.wav",
       "Kitchen-3dbv1.7_SoundRoomCalibrated.wav",
       "Kitchen-0dbv1.7_SoundRoomCalibrated.wav"
-     ]
+    ],
+    "iterations":"10"
   },
   "listening_devices":[
     {
