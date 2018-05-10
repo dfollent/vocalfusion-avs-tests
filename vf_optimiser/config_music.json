@@ -1,16 +1,16 @@
 {
-  "wait_time":["10"],
-  "device_volume":["90"],
+  "wait_time":["15"],
+  "device_volume":["100"],
   "playback":{
      "device":"xCORE-AUDIO Hi-Res 2",
-     "files":"/Users/xmos/vocalfusion-avs-tests/vf_optimiser/cleanv1.7_SoundRoomCalibrated.wav"
+     "files":"/Users/xmos/vocalfusion-avs-tests/vf_optimiser/Music-6dbv1.7_SoundRoomCalibrated.wav"
   },
   "listening_devices":{
-      "label":"Stereo_Rec_XMOS_Utter",
+      "label":"Music_6dB_RT60_200",
       "ip":"10.128.28.44",
       "username":"pi",
       "password":"raspberry",
-      "play_cmd":"aplay ~/Desktop/HappyLeftETSIRockRightSample_10mins.wav",
+      "play_cmd":"",
       "rec_cmd":"arecord -f S16_LE -r 16000 -c 2 test.raw",
       "wakeword":"beginIndex",
       "reboot_cmd":"~/sw_vocalfusion/host/dfu_control/bin/dfu_i2c reboot",

@@ -104,7 +104,7 @@ def set_parameters(HPFONOFF, AGCDESIREDLEVEL, AGCTIME, ECHOONOFF, AEC_REF_ATTEN)
 def run(HPFONOFF, AGCDESIREDLEVEL, AGCTIME, ECHOONOFF, AEC_REF_ATTEN):
     HPFONOFF_round = round(HPFONOFF)
     ECHOONOFF_round = round(ECHOONOFF)
-    test_label = "{}_{}_HOO_{}_ADL_{}_AT_{}_EOO{}_MA_{}".format(datetime.now().strftime('%Y%m%d'),
+    test_label = "{}_{}_HOO_{}_ADL_{}_AT_{}_EOO{}_ARA_{}".format(datetime.now().strftime('%Y%m%d'),
                                                            PI_LABEL, HPFONOFF_round, AGCDESIREDLEVEL, AGCTIME, ECHOONOFF_round, AEC_REF_ATTEN)
 
     ssh_logger = log_utils.get_logger(test_label, OUTPUT_PATH)
@@ -125,7 +125,7 @@ def run(HPFONOFF, AGCDESIREDLEVEL, AGCTIME, ECHOONOFF, AEC_REF_ATTEN):
                                    PI_AREC_CMD,
                                    rec_ssh_logger)
 
-    track_name = "V{}_T{}_HOO_{}_ADL_{}_AT_{}_EOO_{}_ARA_{}.raw".format(VOLUME, WAIT_TIME, HPFONOFF_round, AGCDESIREDLEVEL, AGCTIME, ECHOONOFF_round, AEC_REF_ATTEN)
+    track_name = "{}_V{}_T{}_HOO_{}_ADL_{}_AT_{}_EOO_{}_ARA_{}.raw".format(PI_LABEL, VOLUME, WAIT_TIME, HPFONOFF_round, AGCDESIREDLEVEL, AGCTIME, ECHOONOFF_round, AEC_REF_ATTEN)
 
     result = 0
     try:
@@ -236,9 +236,9 @@ def main():
 
     wait_times = input_dict["wait_time"]
 
-    for time in wait_times:
+    for wait_time in wait_times:
         global WAIT_TIME
-        WAIT_TIME = time
+        WAIT_TIME = wait_time
 
 
         for volume in DEVICE_VOL:
@@ -262,7 +262,7 @@ def main():
             global PB_FILE
             PB_FILE = input_dict['playback']['files']
 
-            print "Running Test - Wait Time:{}s - Volume:{}%".format(time, volume)
+            print "Running Test - Wait Time:{}s - Volume:{}%".format(WAIT_TIME, volume)
             optimize(input_dict["bayesian_model"], args.input, args.explore, "V{}_T{}_{}".format(volume, WAIT_TIME, args.output))
 
 

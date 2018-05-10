@@ -10,6 +10,8 @@ import time
 from datetime import datetime
 import json
 import traceback
+import signal
+
 
 def get_json(file):
     with open(file, 'r') as f:
@@ -24,6 +26,7 @@ def get_args(args):
 
     pb_device = input_dict['playback']['device']
     pb_files = input_dict['playback']['files']
+    avs_devices = input_dict['listening_devices']
 
     if 'iterations' in input_dict['playback']:
         iterations = input_dict['playback']['iterations']
@@ -34,17 +37,19 @@ def get_args(args):
 
 def run_tests(avs_devices, pb_device, pb_files, loop_count):
     test_output = "{}_avs_tester".format(datetime.now().strftime('%Y%m%d'))
-    ssh_output = "{}_{}_{}".format(datetime.now().strftime('%Y%m%d'),
-                                   label.replace(" ","_").replace(".","_"),
-                                   ipaddress.replace(".","_"))
-    logger = log_utils.get_logger(test_file_name, 'logs', console=True)
-    ssh_logger = log_utils.get_logger(ssh_output, 'ssh_logs')
+
+    logger = log_utils.get_logger(test_output, 'logs', console=True)
     runners = []
 
     try:
         subprocess.call(["mosquitto_pub", "-t", "bored_room/door", "-m", "busy"])
 
         for device in avs_devices:
+
+            ssh_output = "{}_{}_{}".format(datetime.now().strftime('%Y%m%d'),
+                                   device.get('label').replace(" ","_").replace(".","_"),
+                                   device.get('ip').replace(".","_"))
+            ssh_logger = log_utils.get_logger(ssh_output, 'ssh_logs')
             runners.append(ssh_runner.SshRunner(device.get('label'),
                                                 device.get('ip'),
                                                 device.get('username'),
@@ -82,8 +87,8 @@ def run_tests(avs_devices, pb_device, pb_files, loop_count):
         logger.info("KeyboardInterrupt")
 
     except Exception as e:
-        self.logger.error(str(e))
-        self.logger.error(traceback.format_tb())
+        logger.error(str(e))
+        traceback.print_exc()
 
     finally:
         signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -97,7 +102,8 @@ def main():
     argparser.add_argument('config',
                             default=None,
                             help='Config JSON file')
-    run_tests(get_args(argparser.parse_args()))
+    avs_devices, pb_device, pb_files, loop_count = get_args(argparser.parse_args())
+    run_tests(avs_devices, pb_device, pb_files, loop_count)
 
 
 if __name__ == '__main__':

@@ -1,12 +1,12 @@
 {
-  "wait_time":["10"],
-  "device_volume":["90"],
+  "wait_time":["15"],
+  "device_volume":["100"],
   "playback":{
      "device":"xCORE-AUDIO Hi-Res 2",
      "files":"/Users/xmos/vocalfusion-avs-tests/vf_optimiser/cleanv1.7_SoundRoomCalibrated.wav"
   },
   "listening_devices":{
-      "label":"Stereo_Rec_XMOS_Utter",
+      "label":"Playback_90dB_RT60_200",
       "ip":"10.128.28.44",
       "username":"pi",
       "password":"raspberry",
