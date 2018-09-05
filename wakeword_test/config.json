@@ -22,7 +22,7 @@
         "dut_files":[
             ""
           ],
-        "iterations":"1"
+        "iterations":[1, 2]
     }
   ]
 }
