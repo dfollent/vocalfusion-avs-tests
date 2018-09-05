@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import threading
 import pexpect
+from pexpect import pxssh
 import time
 import traceback
 import re
@@ -29,7 +30,7 @@ class StoppableThread(threading.Thread):
 class SshRunner():
     """SSH Runner class. Runs a threaded command to a specified ssh target."""
 
-    def __init__(self, label, ipaddress, username, password, wakeword, cmd, logger=None):
+    def __init__(self, label, ipaddress, username, password, wakeword, cmd, track_name,logger=None):
         self.label = label
         self.hostname = ipaddress
         self.username = username
@@ -41,6 +42,8 @@ class SshRunner():
         self.start_cmd = cmd
         self.regex = re.compile(wakeword)
         self.done_regex = re.compile("Done")
+
+        self.track_name = track_name
 
         self._counter = 0
         self.last_time = datetime.now()
@@ -67,7 +70,9 @@ class SshRunner():
         try:
             self.ssh.login(self.hostname, self.username, self.password)
             self.connected = True
-            self.ssh.sendline(self.start_cmd)
+            print "{}".format(self.start_cmd)
+
+            self.ssh.sendline("{}".format(self.start_cmd))
 
             while(True):
                 if(self.t.stopped()):
@@ -84,6 +89,9 @@ class SshRunner():
         finally:
             self.logger.info("Logging out")
             self.ssh.sendline(self.kill_cmd)
+            self.ssh.prompt()
+            lines = self.ssh.before
+            self.logger.info(lines)
             self.ssh.logout()
             self.connected = False
 
@@ -94,21 +102,31 @@ class SshRunner():
 
     def get_count(self):
         ssh_attempts = 5
+
         for i in range(ssh_attempts):
             try:
-                self._counter = 0
+                
                 count_ssh = pexpect.pxssh.pxssh(timeout=None, ignore_sighup=False)
                 count_ssh.login(self.hostname, self.username, self.password)
-                count_ssh.sendline("nc -w 5 10.0.77.15 9999 < test.raw")
-
+                # print "mv /tmp/{} /media/r0ro/XMOS_Testing/".format(self.track_name)
+                # count_ssh.sendline("mv /tmp/{} /media/r0ro/XMOS_Testing/".format(self.track_name))
+                # count_ssh.prompt()
+                # print "wakeword_sensory -w /media/r0ro/XMOS_Testing/{}".format(self.track_name)
+                # count_ssh.sendline("wakeword_sensory -w /media/r0ro/XMOS_Testing/{}".format(self.track_name))
+                # count_ssh.prompt()
+                count_ssh.sendline("sox ~/Documents/{} temp_asr.wav remix 2".format(self.track_name))
                 count_ssh.prompt()
 
+                count_ssh.sendline("nc -w 3 10.128.28.36 10008 < temp_asr.wav")
+                count_ssh.prompt()
                 lines = count_ssh.before
-
+                self.logger.info(lines)
+                # print lines 
+                self._counter = 0
                 for line in lines.split('\n'):
                     if self.regex.search(line.strip()):
                         self._counter += 1
-
+                    
 
                 count_ssh.logout()
                 break
@@ -120,14 +138,14 @@ class SshRunner():
         connected = False
         return self._counter
 
-    def rename_track(self, track_name):
-        rename_ssh = pexpect.pxssh.pxssh(timeout=None, ignore_sighup=False)
-        rename_ssh.login(self.hostname, self.username, self.password)
-        rename_ssh.sendline("mv test.raw {}".format(track_name))
-
-        rename_ssh.prompt()
-        rename_ssh.logout()
-        return
+    # def rename_track(self, track_name):
+    #     rename_ssh = pexpect.pxssh.pxssh(timeout=None, ignore_sighup=False)
+    #     rename_ssh.login(self.hostname, self.username, self.password)
+    #     rename_ssh.sendline("mv test.raw {}".format(track_name))
+    #     # rename_ssh.sendline("sox test.raw R_{} remix 2".format(track_name))
+    #     rename_ssh.prompt()
+    #     rename_ssh.logout()
+    #     return
 
 
     def stop(self):
