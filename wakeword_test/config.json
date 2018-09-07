@@ -1,0 +1,28 @@
+{
+  "playback":{
+     "device":"xCORE USB Audio 2.0"
+  },
+  "dut":{
+      "label":"InHouse_VF_222_v1.1_20180903",
+      "ip":"",
+      "username":"",
+      "password":"",
+      "wakeword":"beginIndex",
+      "reboot_cmd":"~/xmosdfu 0x13 --reboot"
+  },
+  "tests":[
+    {
+        "play_cmd":"",
+        "rec_cmd":"rec -b 16 -r 48000 -c 8 ~/Documents/XMOS_VF_v1_1/",
+        "delay_after_dut_audio":"20",
+        "files":[
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise1_65dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise1_70dB.wav"
+          ],
+        "dut_files":[
+            ""
+          ],
+        "iterations":[1, 2]
+    }
+  ]
+}
