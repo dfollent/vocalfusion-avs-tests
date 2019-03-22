@@ -1,28 +1,80 @@
 {
-  "playback":{
-     "device":"xCORE USB Audio 2.0"
+  "env_audio_host":{
+     "env_audio_speakers":"xCORE USB Audio 2.0"
   },
-  "dut":{
-      "label":"InHouse_VF_222_v1.1_20180903",
-      "ip":"",
+  "dut_host":{
+      "label":"InHouse_XVF3510_v1.2_2019XXXX",
+      "ip":"10.128.29.6",
       "username":"",
       "password":"",
-      "wakeword":"beginIndex",
-      "reboot_cmd":"~/xmosdfu 0x13 --reboot"
+      "dut_reboot_cmd":""
   },
   "tests":[
     {
-        "play_cmd":"",
-        "rec_cmd":"rec -b 16 -r 48000 -c 8 ~/Documents/XMOS_VF_v1_1/",
+        "dut_play_cmd":"play ",
+        "dut_rec_cmd":"rec -b 16 -r 48000 -c 2 ~/Documents/XVF3510_2019XXXX/",
         "delay_after_dut_audio":"20",
-        "files":[
-            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise1_65dB.wav",
-            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise1_70dB.wav"
+        "env_audio_tracks":[
+            "/Users/xmos/XMOS_Test_Audio/Loc1_Noise1_65dB.wav"
           ],
-        "dut_files":[
+        "dut_audio_tracks":[
+            "~/XMOS_Test_Audio/XMOS_DUT1_80dB.wav"
+          ],
+        "iterations":[1, 2, 3]
+    },
+    {
+        "dut_play_cmd":"play ",
+        "dut_rec_cmd":"rec -b 16 -r 48000 -c 2 ~/Documents/XVF3510_2019XXXX/",
+        "delay_after_dut_audio":"20",
+        "env_audio_tracks":[
+            "/Users/xmos/XMOS_Test_Audio/Loc1_Clean.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc1_Noise1_60dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc1_Noise1_65dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc1_Noise1_70dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc1_Noise1_80dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc1_Noise2_60dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc1_Noise2_65dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc1_Noise2_70dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc1_Noise2_80dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc2_Clean.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc2_Noise1_60dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc2_Noise1_65dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc2_Noise1_70dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc2_Noise1_80dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc2_Noise2_60dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc2_Noise2_65dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc2_Noise2_70dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc2_Noise2_80dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Clean.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise1_60dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise1_65dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise1_70dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise1_80dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise2_60dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise2_65dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise2_70dB.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Noise2_80dB.wav"
+          ],
+        "dut_audio_tracks":[
             ""
           ],
-        "iterations":[1, 2]
+        "iterations":[1, 2, 3]
+    },
+    {
+        "dut_play_cmd":"play ",
+        "dut_rec_cmd":"rec -b 16 -r 48000 -c 2 ~/Documents/XVF3510_2019XXXX/",
+        "delay_after_dut_audio":"20",
+        "env_audio_tracks":[
+            "/Users/xmos/XMOS_Test_Audio/Loc1_Clean.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc2_Clean.wav",
+            "/Users/xmos/XMOS_Test_Audio/Loc3_Clean.wav"
+          ],
+        "dut_audio_tracks":[
+            "~/XMOS_Test_Audio/XMOS_DUT1_70dB.wav",
+            "~/XMOS_Test_Audio/XMOS_DUT1_80dB.wav",
+            "~/XMOS_Test_Audio/XMOS_DUT1_90dB.wav"
+          ],
+        "iterations":[1, 2, 3]
     }
   ]
 }

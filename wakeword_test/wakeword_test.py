@@ -21,12 +21,12 @@ def get_json(file):
         return json.load(f)
 
 
-def reset_device(dut_ip, dut_name, dut_password, reboot_cmd):
+def reset_device(dut_ip, dut_name, dut_password, dut_reboot_cmd):
     for i in range(SSH_ATTEMPTS):
         try:
             ssh = pxssh.pxssh(timeout=None, ignore_sighup=False)
             ssh.login(dut_ip, dut_name, dut_password)
-            ssh.sendline(reboot_cmd)
+            ssh.sendline(dut_reboot_cmd)
             ssh.prompt()
             ssh.logout()
             break
@@ -36,30 +36,30 @@ def reset_device(dut_ip, dut_name, dut_password, reboot_cmd):
                 raise
 
 
-def run_test(test, dut, pb_device):
-    dut_label = dut["label"]
-    dut_ip = dut["ip"]
-    dut_name = dut["username"]
-    dut_password = dut["password"]
-    dut_wakeword = dut["wakeword"]
-    dut_reboot_cmd = dut["reboot_cmd"]
+def run_test(test, dut_host, pb_device):
+    dut_label = dut_host["label"]
+    dut_ip = dut_host["ip"]
+    dut_name = dut_host["username"]
+    dut_password = dut_host["password"]
+    dut_wakeword = "NA"
+    dut_reboot_cmd = dut_host["dut_reboot_cmd"]
 
     for iteration in test['iterations']:
-        for dut_file in test['dut_files']:
-            for test_file in test['files']:
+        for dut_audio_track in test['dut_audio_tracks']:
+            for env_audio_track in test['env_audio_tracks']:
 
                 test_label = "{}_{}".format(datetime.now().strftime('%Y%m%d'), dut_label)
                 ssh_logger = log_utils.get_logger(test_label, OUTPUT_PATH)
                 rec_ssh_logger = log_utils.get_logger("{}_rec".format(test_label), OUTPUT_PATH)
-                track_name = "{}_{}_{}_Take{}.wav".format(dut_label, (test_file.split('.')[0]).split('/')[-1], (dut_file.split('.')[0]).split('/')[-1],  iteration)
-                play_cmd = "{}{}".format(test['play_cmd'], dut_file)
+                track_name = "{}_{}_{}_Take{}.wav".format(dut_label, (env_audio_track.split('.')[0]).split('/')[-1], (dut_audio_track.split('.')[0]).split('/')[-1],  iteration)
+                dut_play_cmd = "{}{}".format(test['dut_play_cmd'], dut_audio_track)
 
                 aplay_runner = ssh_runner.SshRunner(test_label,
                                                dut_ip,
                                                dut_name,
                                                dut_password,
                                                dut_wakeword,
-                                               play_cmd,
+                                               dut_play_cmd,
                                                track_name,
                                                ssh_logger)
 
@@ -68,7 +68,7 @@ def run_test(test, dut, pb_device):
                                                dut_name,
                                                dut_password,
                                                dut_wakeword,
-                                               "{}{}".format(test['rec_cmd'], track_name),
+                                               "{}{}".format(test['dut_rec_cmd'], track_name),
                                                track_name,
                                                rec_ssh_logger)
 
@@ -82,7 +82,7 @@ def run_test(test, dut, pb_device):
 
                     time.sleep(float(test['delay_after_dut_audio']))
 
-                    play_wav.play_wav(test_file, pb_device)
+                    play_wav.play_wav(env_audio_track, pb_device)
                     aplay_runner.stop()
                     arecord_runner.stop()
                     time.sleep(1)
@@ -112,8 +112,8 @@ def main():
         print "Error parsing JSON file!"
         raise
 
-    pb_device = input_dict['playback']['device']
-    dut = input_dict['dut']
+    pb_device = input_dict['env_audio_host']['env_audio_speakers']
+    dut_host = input_dict['dut_host']
     tests = input_dict['tests']
 
     for test in tests:
@@ -122,8 +122,7 @@ def main():
             print "{} {}".format(i, test[i])
         print "\n *** \n"
 
-        run_test(test, dut, pb_device)
-
+        run_test(test, dut_host, pb_device)
 
 
 if __name__ == '__main__':
