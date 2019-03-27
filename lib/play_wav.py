@@ -3,6 +3,7 @@ import sys
 import pyaudio
 import wave
 import struct
+import numpy as np
 
 
 def select_device(audio_manager, dev_name, dev_type):
@@ -37,10 +38,7 @@ def get_audio_devices(audio_manager, pb_dev_name, rec_dev_name):
 
 
 
-def play_wav(pb_filename, pb_dev_name):
-    global index,repeat
-    index = 0
-    repeat = 1
+def play_wav(pb_filename, pb_dev_name, channel=0):
     CHUNK_SIZE = 1024
 
     audio_manager = pyaudio.PyAudio()
@@ -49,6 +47,7 @@ def play_wav(pb_filename, pb_dev_name):
 
     wav_to_play = wave.open(pb_filename, 'rb')
     samp_width = wav_to_play.getsampwidth()
+    wav_channels = wav_to_play.getnchannels()
 
     if samp_width == 2:
       struct_format_str = "<{}h"
@@ -67,9 +66,76 @@ def play_wav(pb_filename, pb_dev_name):
 
     data = wav_to_play.readframes(CHUNK_SIZE)
 
-    while len(data) > 0:
-        out_stream.write(data)
-        data = wav_to_play.readframes(CHUNK_SIZE)
+    if wav_channels == 1:
+        while len(data) > 0:
+            stereo_signal = np.zeros([len(data), 2]).tostring()
+            stereo_signal[:, channel] = data[:]
+            out_stream.write(stereo_signal)
+            data = wav_to_play.readframes(CHUNK_SIZE)
+    else:
+        while len(data) > 0:
+            out_stream.write(data)
+            data = wav_to_play.readframes(CHUNK_SIZE)
+
+
+    out_stream.stop_stream()
+    out_stream.close()
+    audio_manager.terminate()
+
+
+def get_gained_frames(wav_file, gain):
+    CHUNK_SIZE = 1024    
+    frame = wav_file.readframes(CHUNK_SIZE)
+    
+    if len(frame) > 0:    
+        decoded = np.fromstring(frame, 'Int32')
+        gained_decoded = (10**(float(gain) / 20.0)) * decoded
+        frame = gained_decoded.tostring()
+    
+    return frame
+
+
+
+def play_gained_wav(pb_filename, pb_dev_name, gain, channel=0):
+    CHUNK_SIZE = 1024
+
+    audio_manager = pyaudio.PyAudio()
+    pb_dev_index, rec_dev_index = get_audio_devices(audio_manager, pb_dev_name, None)
+
+
+    wav_to_play = wave.open(pb_filename, 'rb')
+    samp_width = wav_to_play.getsampwidth()
+    wav_channels = wav_to_play.getnchannels()
+
+    if samp_width == 2:
+      struct_format_str = "<{}h"
+    elif samp_width == 4:
+      struct_format_str = "<{}i"
+    else:
+      print "ERROR: only support 16 or 32-bit audio"
+      sys.exit(1)
+
+
+    out_stream = audio_manager.open(format=audio_manager.get_format_from_width(samp_width),
+                                    channels=wav_to_play.getnchannels(),
+                                    rate=wav_to_play.getframerate(),
+                                    output=True,
+                                    output_device_index=pb_dev_index)
+
+    stereo_data = np.zeros()
+
+    data = get_gained_frames(wav_to_play, gain)
+
+    if wav_channels == 1:
+        while len(data) > 0:
+            stereo_signal = np.zeros([len(data), 2]).tostring()
+            stereo_signal[:, channel] = data[:]
+            out_stream.write(stereo_signal)
+            data = get_gained_frames(wav_to_play, gain)
+    else:
+        while len(data) > 0:
+            out_stream.write(data)
+            data = get_gained_frames(wav_to_play, gain)
 
 
 

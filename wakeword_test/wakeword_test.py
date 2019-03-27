@@ -102,7 +102,7 @@ def run_test(test, dut_host, pb_device):
 
 
 def main():
-    description = 'Run AVS tests as defined by config file. Log client output(s) and test results.'
+    description = 'Run XMOS tests as defined by config file. Log client output(s) and test results.'
     argparser = argparse.ArgumentParser(description=description)
     argparser.add_argument('config', default=None, help='Config JSON file')
 

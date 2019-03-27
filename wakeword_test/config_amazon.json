@@ -1,0 +1,37 @@
+{
+  "test_name":"",
+  "env_audio_host":{
+     "env_audio_speakers":"xCORE USB Audio 2.0"
+  },
+  "dut_host":{
+      "ip":"10.128.29.6",
+      "username":"",
+      "password":"",
+      "dut_play_cmd":"play ",
+      "dut_rec_cmd":"rec -b 16 -r 48000 -c 2 ~/Documents/XVF3510_2019XXXX/",
+  },
+  "tests":[
+    {
+        "noise_track":"~/XMOS_Test_Audio/XMOS_DUT1_80dB.wav",
+        "noise_gain":"-6",
+        "noise_channel":"0",
+        "utterance_tracks":[
+            ""
+          ],
+        "utterance_gain":"-6",
+        "utterance_channel":"1",
+        "iterations":[1]
+    },
+    {
+        "noise_track":"",
+        "noise_gain":"-6",
+        "noise_channel":"0",
+        "utterance_tracks":[
+            ""
+          ],
+        "utterance_gain":"-6",
+        "utterance_channel":"1",
+        "iterations":[1]
+    }
+  ]
+}
