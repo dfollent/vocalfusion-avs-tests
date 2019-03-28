@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import threading
 import pexpect
+from pexpect import pxssh
 import time
 import traceback
 import re
@@ -37,7 +38,7 @@ class SshRunner():
         self.t = StoppableThread(target=self.run)
         self.lock = threading.Lock()
         self.connected = False
-        self.ssh = pexpect.pxssh.pxssh(timeout=None, ignore_sighup=False)
+        self.ssh = pxssh.pxssh(timeout=None, ignore_sighup=False)
         self.start_cmd = cmd
         self.regex = re.compile(wakeword)
         self._counter = 0
@@ -53,6 +54,7 @@ class SshRunner():
         else:
             ch = logging.StreamHandler()
             ch.setLevel(logging.DEBUG)
+            formatter = logging.Formatter('%(asctime)s : %(levelname)s : %(message)s')
             ch.setFormatter(formatter)
             self.logger = logging.getLogger(self.label)
             self.logger.addHandler(ch)

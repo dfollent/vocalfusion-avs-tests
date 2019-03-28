@@ -1,4 +1,9 @@
 #!/usr/bin/env python2
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
+import play_wav
+import log_utils
+import ssh_runner
 
 import argparse
 import json
@@ -7,7 +12,15 @@ import pyaudio
 import numpy as np
 import time
 import threading
+from datetime import datetime
 
+OUTPUT_PATH = 'logs'
+RUN_PLAY_LOOP = False
+PLAY_LOOP_FINISHED = True
+
+
+def get_basename(filepath):
+    return os.path.splitext(os.path.basename(filepath))[0]
 
 def get_json(file):
     with open(file, 'r') as f:
@@ -21,43 +34,95 @@ def get_args():
     
     return argparser.parse_args()
 
+def stop_play_loop():
+    global STOP_PLAY_LOOP_FLAG
+    STOP_PLAY_LOOP_FLAG = False
+
+    while PLAY_LOOP_FINISHED is False:
+        time.sleep(1)
+
 def play_loop(track, device, gain, channel):
-    global PLAY_LOOP_FLAG
-    PLAY_LOOP_FLAG = True
-    
-    while PLAY_LOOP_FLAG:
-        play_gained_wav(track, device, gain, channel)
+    global STOP_PLAY_LOOP_FLAG
+    global PLAY_LOOP_FINISHED
+
+    STOP_PLAY_LOOP_FLAG = True
+    PLAY_LOOP_FINISHED = False
+
+    while STOP_PLAY_LOOP_FLAG:
+        print datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        play_wav.play_gained_wav(track, device, gain, channel)
+
+    PLAY_LOOP_FINISHED = True
         
 
 
 def run_amazon_tests(config):
 
-    pb_device = input_dict['env_audio_host']['env_audio_speakers']
-    dut_host = input_dict['dut_host']
-    tests = input_dict['tests']    
+    pb_device = config['env_audio_host']['env_audio_speakers']
+    dut_host = config['dut_host']
+    tests = config['tests']    
 
     dut_ip = dut_host['ip']
     dut_name = dut_host['username']
     dut_password = dut_host['password']
+    dut_rec_cmd = dut_host['dut_rec_cmd']
 
-    for test in tests:
-        noise_track = test['noise_track']
-        utterance_tracks = test['utterance_tracks']
-        noise_ch = int(test['noise_channel'])
-        noise_gain = int(test['noise_gain'])
-        utterance_ch = int(test['utterance_channel'])
-        utterance_gain = int(test['utterance_gain'])
+    rec_ssh_logger = log_utils.get_logger("_tmp", OUTPUT_PATH)
 
-        for iteration in test['iterations']:
-            noise_track_thread = threading.Thread(target=play_loop, args=(noise_track, pb_device, noise_gain, noise_ch))
-            noise_track_thread.start()
-            
-            for utterance_track in utterance_tracks:
-                time.sleep(5)
-                play_wav.play_wav(utterance_track, pb_device, utterance_ch)
-            
-            global PLAY_LOOP_FLAG
-            PLAY_LOOP_FLAG = False
+    try:
+
+        for test in tests:
+            test_name = test["name"]
+            noise_track = test['noise_track']
+            utterance_tracks = test['utterance_tracks']
+            noise_ch = int(test['noise_channel'])
+            noise_gain = int(test['noise_gain'])
+            utterance_ch = int(test['utterance_channel'])
+            utterance_gain = int(test['utterance_gain'])
+
+            for iteration in test['iterations']:
+
+                if noise_track:
+                    noise_track_thread = threading.Thread(target=play_loop, args=(noise_track, pb_device, noise_gain, noise_ch))
+                    noise_track_thread.start()
+                
+                if utterance_tracks:
+                    print utterance_tracks
+                    for utterance_track in utterance_tracks:
+
+
+                        utterance_track_name = get_basename(utterance_track)
+                        noise_track_name = get_basename(noise_track)
+                        rec_track_name = "{}_{}_{}.wav".format(test_name, noise_track_name, utterance_track_name)
+
+                        arecord_runner = ssh_runner.SshRunner(rec_track_name,
+                                           dut_ip,
+                                           dut_name,
+                                           dut_password,
+                                           wakeword="NA",
+                                           cmd="{}{}".format(dut_rec_cmd, rec_track_name))
+
+
+                        try:
+                            arecord_runner.start()
+                            time.sleep(5)
+
+                            play_wav.play_gained_wav(utterance_track, pb_device, utterance_gain, utterance_ch)
+                            time.sleep(1)
+
+                            arecord_runner.stop()
+
+                        except KeyboardInterrupt:
+                            arecord_runner.stop()
+                            raise
+
+
+                stop_play_loop()
+
+    except Exception as e:
+        stop_play_loop()
+        raise
+
 
 
 
