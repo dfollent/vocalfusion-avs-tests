@@ -6,6 +6,7 @@ import wave
 import pyaudio
 import numpy as np
 import time
+import threading
 
 
 def get_json(file):
@@ -35,9 +36,9 @@ def run_amazon_tests(config):
     dut_host = input_dict['dut_host']
     tests = input_dict['tests']    
 
-    dut_ip = dut_host["ip"]
-    dut_name = dut_host["username"]
-    dut_password = dut_host["password"]
+    dut_ip = dut_host['ip']
+    dut_name = dut_host['username']
+    dut_password = dut_host['password']
 
     for test in tests:
         noise_track = test['noise_track']
@@ -48,7 +49,8 @@ def run_amazon_tests(config):
         utterance_gain = int(test['utterance_gain'])
 
         for iteration in test['iterations']:
-            play_loop(noise_track, pb_device, noise_gain, noise_ch)
+            noise_track_thread = threading.Thread(target=play_loop, args=(noise_track, pb_device, noise_gain, noise_ch))
+            noise_track_thread.start()
             
             for utterance_track in utterance_tracks:
                 time.sleep(5)
@@ -66,7 +68,7 @@ def main():
     try:
         config = get_json(args.config)
     except Exception as e:
-        print "Error parsing JSON file!"
+        print('Error parsing JSON file!')
         raise
 
 
