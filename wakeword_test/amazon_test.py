@@ -49,7 +49,6 @@ def play_loop(track, device, gain, channel):
     PLAY_LOOP_FINISHED = False
 
     while STOP_PLAY_LOOP_FLAG:
-        print datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         play_wav.play_gained_wav(track, device, gain, channel)
 
     PLAY_LOOP_FINISHED = True
@@ -61,6 +60,8 @@ def run_amazon_tests(config):
     pb_device = config['env_audio_host']['env_audio_speakers']
     dut_host = config['dut_host']
     tests = config['tests']    
+
+    utterance_tracks = config['utterance_tracks']
 
     dut_ip = dut_host['ip']
     dut_name = dut_host['username']
@@ -74,9 +75,9 @@ def run_amazon_tests(config):
         for test in tests:
             test_name = test["name"]
             noise_track = test['noise_track']
-            utterance_tracks = test['utterance_tracks']
+            # utterance_tracks = test['utterance_tracks']
             noise_ch = int(test['noise_channel'])
-            noise_gain = int(test['noise_gain'])
+            noise_gain = int(test['noise_gain'] if test['noise_gain'] else '0')
             utterance_ch = int(test['utterance_channel'])
             utterance_gain = int(test['utterance_gain'])
 
@@ -87,13 +88,13 @@ def run_amazon_tests(config):
                     noise_track_thread.start()
                 
                 if utterance_tracks:
-                    print utterance_tracks
                     for utterance_track in utterance_tracks:
-
 
                         utterance_track_name = get_basename(utterance_track)
                         noise_track_name = get_basename(noise_track)
                         rec_track_name = "{}_{}_{}.wav".format(test_name, noise_track_name, utterance_track_name)
+
+                        print rec_track_name
 
                         arecord_runner = ssh_runner.SshRunner(rec_track_name,
                                            dut_ip,
