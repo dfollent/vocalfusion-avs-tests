@@ -60,7 +60,6 @@ def run_test(test, dut_host, pb_device):
                                                dut_password,
                                                dut_wakeword,
                                                dut_play_cmd,
-                                               track_name,
                                                ssh_logger)
 
                 arecord_runner = ssh_runner.SshRunner(test_label,
@@ -69,7 +68,6 @@ def run_test(test, dut_host, pb_device):
                                                dut_password,
                                                dut_wakeword,
                                                "{}{}".format(test['dut_rec_cmd'], track_name),
-                                               track_name,
                                                rec_ssh_logger)
 
                
