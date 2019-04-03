@@ -1,7 +1,6 @@
 import os
 import argparse
 import glob
-import subprocess
 import time
 import json
 
@@ -17,10 +16,10 @@ UTTERANCES = [
 	{"name": "US_P02_02_F", "request": "alexa what is the capital of bolivia", "response": ".*Sucre.*", "sha1hash":["f49c8ff5c6ff1d4bf5da575710d9f08c950e0c14"]},
 	{"name": "US_P02_04_M", "request": "alexa who wrote to kill a mockingbird", "response": ".*Harper Lee.*", "sha1hash":["1b7ac6862050a06b1ad81895752431e8f7d19908", "d758b48753fcea6f4d3b1afda2c599d2e82b2d5f"]},
 	{"name": "US_P03_01_F", "request": "alexa what time is it in washington", "response": ".*time in Washington.*", "sha1hash":[]},
-	{"name": "US_P03_05_F", "request": "alexa how do you spell zoo", "response": ".*Zoo.*spelled.*", "sha1hash":["78d83892dfe297c57bf51b3712cf1ab1ed0d6e70", "135395b6603e4b61429015318c4725b30a0bc2e0", "e4bc58d3df05fe85c748fbcd50dec910044fd90b"]},
+	{"name": "US_P03_05_F", "request": "alexa how do you spell zoo", "response": ".*Zoo.*spelled.*", "sha1hash":["0e9d8dc234f7947e6dc4e1122cca4b4816be0bb4", "78d83892dfe297c57bf51b3712cf1ab1ed0d6e70", "135395b6603e4b61429015318c4725b30a0bc2e0", "e4bc58d3df05fe85c748fbcd50dec910044fd90b"]},
 	{"name": "US_P04_01_F", "request": "alexa what time is it in saint paul", "response": ".*time in Saint Paul.*", "sha1hash":[]},
-	{"name": "US_P04_02_F", "request": "alexa what is the capital of south korea", "response": ".*Seoul.*", "sha1hash":["1c50dfe7c911be6a0efd5421c187ded3991d83c1"]},
-	{"name": "US_P04_04_F", "request": "alexa who wrote crime and punishment", "response": ".*Fyodor Dostoevsky.*", "sha1hash":[]},
+	{"name": "US_P04_02_F", "request": "alexa what is the capital of south korea", "response": ".*Seoul.*", "sha1hash":["1c50dfe7c911be6a0efd5421c187ded3991d83c1", "65373cc1c2ec1af773bdefff3f969963e54466fa"]},
+	{"name": "US_P04_04_F", "request": "alexa who wrote crime and punishment", "response": ".*Fyodor Dostoevsky.*", "sha1hash":["82d5cfb7fc39131e7106fdfe5e34cca91d3be177", "34867d8420f67da58976f07ac538e9aa497dea2a"]},
 	{"name": "US_P06_01_F", "request": "alexa what time is it in las vegas nevada", "response": ".*time in Las Vegas.*", "sha1hash":[]},
 	{"name": "US_P06_02_F", "request": "alexa what is the capital of cuba", "response": ".*Havana.*", "sha1hash":["710385e2412cc809180d510125d1bfc9eef38989"]},
 	{"name": "US_P07_01_M", "request": "alexa what time is it in honolulu", "response": ".*time in Honolulu.*", "sha1hash":[]},
@@ -48,7 +47,7 @@ UTTERANCES = [
 	{"name": "US_P15_02_M", "request": "alexa what is the capital of argentina", "response": ".*Buenos Aires.*", "sha1hash":["c67f33830750482ddbf3d705930db63d8599c96d"]},
 	{"name": "US_P16_01_M", "request": "alexa what time is it in san luis obispo california", "response": ".*time in San Luis Obispo.*", "sha1hash":[]},
 	{"name": "US_P16_02_M", "request": "alexa what is the capital of canada", "response": ".*Ottawa.*", "sha1hash":["94a19dd6d961f6faf0d34dc641a5bce587eacc57"]},
-	{"name": "US_P16_04_M", "request": "alexa who wrote twenty thousand leagues under the sea", "response": ".*Jules Verne.*", "sha1hash":["89cd11efafa4e5b67616ce99fd664ba0cdf52ac0", "a98b74a1b0a41817c21830b3dc82975ac952c35c"]},
+	{"name": "US_P16_04_M", "request": "alexa who wrote twenty thousand leagues under the sea", "response": ".*Jules Verne.*", "sha1hash":["c252be534ad8103c2cac778f1b61b6eac3098d86", "89cd11efafa4e5b67616ce99fd664ba0cdf52ac0", "a98b74a1b0a41817c21830b3dc82975ac952c35c"]},
 	{"name": "US_P17_01_F", "request": "alexa what time is it in tucson", "response": ".*time in Tucson.*", "sha1hash":[]},
 	{"name": "US_P17_02_F", "request": "alexa what is the capital of bolivia", "response": ".*Sucre.*", "sha1hash":["f49c8ff5c6ff1d4bf5da575710d9f08c950e0c14"]},
 	{"name": "US_P17_04_F", "request": "alexa who wrote the secret garden", "response": ".*Frances Hodgson Burnett.*", "sha1hash":["a7c962de0da849519be2a7f164078f810ed84dee"]},
@@ -114,6 +113,16 @@ def get_response_result(file, file_hash):
     return response_result
 
 
+def get_hash(file):
+    BLOCKSIZE = 65536
+    hasher = hashlib.sha1()
+    with open(file, 'rb') as read_file:
+        buf = read_file.read(BLOCKSIZE)
+        while len(buf) > 0:
+            hasher.update(buf)
+            buf = read_file.read(BLOCKSIZE)
+    return hasher.hexdigest()
+
 
 
 def main():
@@ -126,20 +135,13 @@ def main():
         response_files = glob.glob("{}/*{}*raw".format(args.in_dir, utterance["name"]))
         for file in response_files:
             response_result = {}
-                        
-            # Check if no response
+
             if os.path.getsize(file) == 0:
+                # No wakeword detected
                 response_result = {"file": file, "wake":0, "response":0, "sha1hash":""}
             
             else:
-                BLOCKSIZE = 65536
-                hasher = hashlib.sha1()
-                with open(file, 'rb') as read_file:
-                    buf = read_file.read(BLOCKSIZE)
-                    while len(buf) > 0:
-                        hasher.update(buf)
-                        buf = read_file.read(BLOCKSIZE)
-                file_hash = hasher.hexdigest()
+                file_hash = get_hash(file)
 
                 if not utterance["sha1hash"] or file_hash not in utterance["sha1hash"]:
                     print("\nPlaying {}".format(file))

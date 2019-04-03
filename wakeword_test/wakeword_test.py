@@ -60,7 +60,6 @@ def run_test(test, dut_host, pb_device):
                                                dut_password,
                                                dut_wakeword,
                                                dut_play_cmd,
-                                               track_name,
                                                ssh_logger)
 
                 arecord_runner = ssh_runner.SshRunner(test_label,
@@ -69,10 +68,9 @@ def run_test(test, dut_host, pb_device):
                                                dut_password,
                                                dut_wakeword,
                                                "{}{}".format(test['dut_rec_cmd'], track_name),
-                                               track_name,
                                                rec_ssh_logger)
 
-               
+
                 try:
                     print datetime.now().strftime("%Y-%m-%d %H:%M")
                     reset_device(dut_ip, dut_name, dut_password, dut_reboot_cmd)
