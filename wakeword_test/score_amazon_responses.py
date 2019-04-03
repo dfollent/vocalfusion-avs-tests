@@ -105,7 +105,7 @@ def get_response_result(file, file_hash):
             response_result = {"file": file, "sha1hash":file_hash, "wake":1, "response":1}
             break
         if user_input is "u":
-            response_result = {"file": file, "sha1hash":file_hash, "wake":-1, "response":-1}
+            response_result = {"file": file, "sha1hash":file_hash, "wake":1, "response":-1}
             break
         if user_input is "r":
             user_input = ""
