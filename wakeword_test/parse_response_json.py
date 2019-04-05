@@ -5,7 +5,7 @@ from collections import Counter
 
 NOISE_VOLUMES = ["45", "55", "65"]
 SPEECH_VOLUMES = ["Normal", "Soft"]
-NOISE_TYPES = ["Pink", "Brown", "Music", "Pub", "Cafeteria", "Livingroom", "NPRnews", "Microwave"]
+NOISE_TYPES = ["Pink", "Brown", "Music", "Pub", "Cafeteria", "Living", "NPRnews", "Microwave"]
 SILENCE_VOLS = ["47", "52", "57", "62", "67"]
 BARGEIN_VOLS = ["55dBA_Ref_Silence_67dB", "65dBA_Ref_Silence_67dB", "55dBA_Ref_Silence_57dB", "65dBA_Ref_Silence_57dB"]
 
