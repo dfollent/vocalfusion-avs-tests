@@ -75,7 +75,7 @@ def move_to_pi(file, channel, ip, username, password):
 	# os.remove(tmp_raw)
 
 
-def run_sdk(ip, username, password, cmd, runtime=15):
+def run_sdk(ip, username, password, cmd, runtime=20):
 	ssh = create_ssh_client()
 	ssh.connect(hostname=ip, username=username, password=password)
 
@@ -115,10 +115,8 @@ def main():
 
     check_dir_exists(args.in_dir)
 
-    out_raw_dir = '{}/raw/'.format(args.out_dir)
-    out_wav_dir = '{}'.format(args.out_dir)
+    out_raw_dir = '{}/'.format(args.out_dir)
     create_dir(out_raw_dir)
-    create_dir(out_wav_dir)
 
     input_files = glob.glob("{}/*.wav".format(args.in_dir))
 
@@ -130,8 +128,6 @@ def main():
     	dest_file_raw = "{}/response_{}.raw".format(out_raw_dir, get_basename(file))
     	get_response_raw(dest_file_raw, args.ip, args.username, args.password)
 
-    	dest_file_wav = "{}/response_{}.wav".format(out_wav_dir, get_basename(file))
-    	create_wav_copy(dest_file_raw, dest_file_wav)
 
 
 
