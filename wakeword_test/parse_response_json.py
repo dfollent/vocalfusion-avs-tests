@@ -5,10 +5,10 @@ from collections import Counter
 
 NOISE_VOLUMES = ["45", "55", "65"]
 SPEECH_VOLUMES = ["Normal", "Soft"]
-NOISE_TYPES = ["Pink", "Brown", "Music", "Pub", "Cafeteria", "Living", "NPRnews", "Microwave"]
+NOISE_TYPES = ["Pink", "Brown", "ETSIRock", "Music", "Pub", "Cafeteria", "Living", "NPRnews", "Microwave"]
 SILENCE_VOLS = ["47", "52", "57", "62", "67"]
 BARGEIN_VOLS = ["55dBA_Ref_Silence_67dB", "65dBA_Ref_Silence_67dB", "55dBA_Ref_Silence_57dB", "65dBA_Ref_Silence_57dB"]
-
+BARGEIN_VOLS2 = ["55dBA_BargeIn_62dB", "65dBA_BargeIn_67dB", "55dBA_BargeIn_52dB", "65dBA_BargeIn_57dB"]
 
 def get_json(file):
     with open(file, 'r') as f:
@@ -23,6 +23,7 @@ def get_args():
 
 
 def parse_data(input_data):
+    print("\nNOISE CASES")
     for speech_vol in SPEECH_VOLUMES:
         for noise_vol in NOISE_VOLUMES:
             print("\n")
@@ -63,7 +64,7 @@ def parse_data(input_data):
 
 
     print("\nBARGE IN")
-    for vol in BARGEIN_VOLS:
+    for vol in BARGEIN_VOLS+BARGEIN_VOLS2:
         responses = [response for response in input_data 
                         if "response_{}".format(vol) in response["file"]]
 

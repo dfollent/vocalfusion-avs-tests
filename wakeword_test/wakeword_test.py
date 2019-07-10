@@ -12,6 +12,7 @@ import argparse
 import csv
 import errno
 import json
+from __future__ import print_function
 
 OUTPUT_PATH = 'logs'
 SSH_ATTEMPTS = 10
@@ -72,7 +73,7 @@ def run_test(test, dut_host, pb_device):
 
 
                 try:
-                    print datetime.now().strftime("%Y-%m-%d %H:%M")
+                    print(datetime.now().strftime("%Y-%m-%d %H:%M"))
                     reset_device(dut_ip, dut_name, dut_password, dut_reboot_cmd)
                     time.sleep(5)
                     arecord_runner.start()
@@ -107,7 +108,7 @@ def main():
     try:
         input_dict = get_json(argparser.parse_args().config)
     except Exception as e:
-        print "Error parsing JSON file!"
+        print("Error parsing JSON file!")
         raise
 
     pb_device = input_dict['env_audio_host']['env_audio_speakers']
@@ -115,9 +116,9 @@ def main():
     tests = input_dict['tests']
 
     for test in tests:
-        print "\n *** \n"
+        print("\n *** \n")
         for i in test:
-            print "{} {}".format(i, test[i])
+            print("{} {}".format(i, test[i])
         print "\n *** \n"
 
         run_test(test, dut_host, pb_device)

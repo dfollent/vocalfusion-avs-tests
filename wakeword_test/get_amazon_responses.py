@@ -9,6 +9,7 @@ import paramiko
 import warnings
 warnings.filterwarnings(action='ignore',module='.*paramiko.*')
 from scp import SCPClient
+from __future__ import print_function
 
 
 
@@ -20,11 +21,8 @@ def create_ssh_client():
     client = paramiko.SSHClient()
     client.load_system_host_keys()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    # client.connect(hostname=ip, username=username, password=password)
     return client
 
-# print(os.path.isdir("/home/el"))
-# print(os.path.exists("/home/el/myfile.txt"))
 
 
 def check_dir_exists(directory):
@@ -50,8 +48,8 @@ def get_args():
     argparser.add_argument('--username', default='pi', help='SSH username of RPi')
     argparser.add_argument('--password', default='raspberry', help='SSH password of RPi')
     argparser.add_argument('--cmd', default='sudo bash sdk/startsample.sh', help='Command to run AVS SDK')
+    argparser.add_argument('--regex', default='*.wav', help='Output directory')
     argparser.add_argument('out_dir', default=None, help='Output directory')
-    
     return argparser.parse_args()
 
 
@@ -65,14 +63,10 @@ def move_to_pi(file, channel, ip, username, password):
 	ssh = create_ssh_client()
 	ssh.connect(hostname=ip, username=username, password=password)
 	scp = SCPClient(ssh.get_transport())
-
 	scp.put(tmp_raw, '/tmp/in.raw')
-
 	scp.close()
 	ssh.close()
 
-	# os.remove(tmp_wav)
-	# os.remove(tmp_raw)
 
 
 def run_sdk(ip, username, password, cmd, runtime=20):
@@ -81,11 +75,9 @@ def run_sdk(ip, username, password, cmd, runtime=20):
 
 	ssh_shell = ssh.invoke_shell()
 	stdin = ssh_shell.makefile('wb')
+    stdin.write('sudo rm -f /tmp/out.raw\n')
 	stdin.write(cmd + '\n')
-	# transport = ssh.get_transport()
-	# channel = transport.open_session()
-	# channel.exec_command(cmd)
-	# ssh.exec_command(cmd, get_pty=True)
+
 	time.sleep(runtime)
 	stdin.write('q' + '\n')
 	stdin.flush()
@@ -97,9 +89,7 @@ def run_sdk(ip, username, password, cmd, runtime=20):
 def get_response_raw(dest_file, ip, username, password):
 	ssh = create_ssh_client()
 	ssh.connect(hostname=ip, username=username, password=password)
-
 	scp = SCPClient(ssh.get_transport())
-	
 	scp.get('/tmp/out.raw', dest_file)
 	scp.close()
 	ssh.close()
@@ -112,26 +102,19 @@ def create_wav_copy(raw_filepath, wav_copy_filepath, rate=16000):
 
 def main():
     args = get_args()
-
     check_dir_exists(args.in_dir)
-
     out_raw_dir = '{}/'.format(args.out_dir)
     create_dir(out_raw_dir)
 
-    input_files = glob.glob("{}/*.wav".format(args.in_dir))
+    input_files = sorted(glob.glob("{}/{}".format(args.in_dir, args.regex)))
 
     for file in input_files:
-       	print file
+       	print(file)
     	move_to_pi(file, args.channel, args.ip, args.username, args.password)
     	run_sdk(args.ip, args.username, args.password, args.cmd)
 
     	dest_file_raw = "{}/response_{}.raw".format(out_raw_dir, get_basename(file))
     	get_response_raw(dest_file_raw, args.ip, args.username, args.password)
-
-
-
-
-
 
 
 if __name__ == '__main__':

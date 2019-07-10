@@ -14,6 +14,8 @@ import time
 import threading
 from datetime import datetime
 
+from __future__ import print_function
+
 OUTPUT_PATH = 'logs'
 RUN_PLAY_LOOP = False
 PLAY_LOOP_FINISHED = True
@@ -21,6 +23,7 @@ PLAY_LOOP_FINISHED = True
 
 def get_basename(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
+
 
 def get_json(file):
     with open(file, 'r') as f:
@@ -31,15 +34,15 @@ def get_args():
     description = 'Run Amazon tests as defined by config file.'
     argparser = argparse.ArgumentParser(description=description)
     argparser.add_argument('config', default=None, help='Test config file')
-    
     return argparser.parse_args()
+
 
 def stop_play_loop():
     global STOP_PLAY_LOOP_FLAG
     STOP_PLAY_LOOP_FLAG = False
-
     while PLAY_LOOP_FINISHED is False:
         time.sleep(1)
+
 
 def play_loop(track, device, gain, channel):
     global STOP_PLAY_LOOP_FLAG
@@ -50,7 +53,6 @@ def play_loop(track, device, gain, channel):
 
     while STOP_PLAY_LOOP_FLAG:
         play_wav.play_gained_wav(track, device, gain, channel)
-
     PLAY_LOOP_FINISHED = True
         
 
@@ -94,7 +96,7 @@ def run_amazon_tests(config):
                         noise_track_name = get_basename(noise_track)
                         rec_track_name = "{}_{}_{}.wav".format(test_name, noise_track_name, utterance_track_name)
 
-                        print rec_track_name
+                        print(rec_track_name)
 
                         arecord_runner = ssh_runner.SshRunner(rec_track_name,
                                            dut_ip,
