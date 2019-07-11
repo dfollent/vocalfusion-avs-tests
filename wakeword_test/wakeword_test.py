@@ -1,4 +1,5 @@
-#!/usr/bin/env python2
+from __future__ import print_function
+
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
 import log_utils
@@ -12,7 +13,6 @@ import argparse
 import csv
 import errno
 import json
-from __future__ import print_function
 
 OUTPUT_PATH = 'logs'
 SSH_ATTEMPTS = 10

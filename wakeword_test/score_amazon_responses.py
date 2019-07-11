@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import argparse
 import glob
@@ -6,7 +7,6 @@ import json
 import hashlib
 import pyaudio
 
-from __future__ import print_function
 
 UTTERANCES = [
 	{"name": "_P01_01_M", "request": "alexa what time is it in little rock", "response": ".*time in Little Rock.*", "sha1hash":[]},

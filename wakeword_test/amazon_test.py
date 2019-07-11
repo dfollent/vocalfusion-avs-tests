@@ -1,4 +1,5 @@
-#!/usr/bin/env python2
+from __future__ import print_function
+
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
 import play_wav
@@ -14,7 +15,6 @@ import time
 import threading
 from datetime import datetime
 
-from __future__ import print_function
 
 OUTPUT_PATH = 'logs'
 RUN_PLAY_LOOP = False
