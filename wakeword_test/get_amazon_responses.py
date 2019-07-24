@@ -50,7 +50,7 @@ def get_args():
     argparser.add_argument('--username', default='pi', help='SSH username of RPi')
     argparser.add_argument('--password', default='raspberry', help='SSH password of RPi')
     argparser.add_argument('--cmd', default='sudo bash sdk/startsample.sh', help='Command to run AVS SDK')
-    argparser.add_argument('--op_point', type=int, default=5, help='Operating point')
+    argparser.add_argument('--op-point', type=int, default=5, help='Operating point')
     argparser.add_argument('--regex', default='*.wav', help='Output directory')
     argparser.add_argument('out_dir', default=None, help='Output directory')
     return argparser.parse_args()

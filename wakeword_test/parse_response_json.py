@@ -7,8 +7,9 @@ NOISE_VOLUMES = ["45", "55", "65"]
 SPEECH_VOLUMES = ["Normal", "Soft"]
 NOISE_TYPES = ["Pink", "Brown", "ETSIRock", "Music", "Pub", "Cafeteria", "Living", "NPRnews", "Microwave"]
 SILENCE_VOLS = ["47", "52", "57", "62", "67"]
-BARGEIN_VOLS = ["55dBA_Ref_Silence_67dB", "65dBA_Ref_Silence_67dB", "55dBA_Ref_Silence_57dB", "65dBA_Ref_Silence_57dB"]
+BARGEIN_VOLS = ["55dBA_Ref_Silence_62dB", "65dBA_Ref_Silence_67dB", "55dBA_Ref_Silence_52dB", "65dBA_Ref_Silence_57dB"]
 BARGEIN_VOLS2 = ["55dBA_BargeIn_62dB", "65dBA_BargeIn_67dB", "55dBA_BargeIn_52dB", "65dBA_BargeIn_57dB"]
+
 
 def get_json(file):
     with open(file, 'r') as f:
