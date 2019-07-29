@@ -105,7 +105,7 @@ def run_amazon_tests(config):
                                            wakeword="NA",
                                            cmd="{}{}".format(dut_rec_cmd, rec_track_name))
 
-
+                        time.sleep(10)
                         try:
                             arecord_runner.start()
                             time.sleep(5)
@@ -118,6 +118,7 @@ def run_amazon_tests(config):
                         except KeyboardInterrupt:
                             arecord_runner.stop()
                             raise
+
 
 
                 stop_play_loop()
