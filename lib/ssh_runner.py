@@ -2,8 +2,6 @@
 import sys
 import threading
 import paramiko
-# import pexpect
-# from pexpect import pxssh
 import time
 import traceback
 import re

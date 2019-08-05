@@ -6,7 +6,6 @@ import log_utils
 import ssh_runner
 import play_wav
 from datetime import datetime
-from pexpect import pxssh
 import traceback
 import time
 import argparse
@@ -118,7 +117,7 @@ def main():
     for test in tests:
         print("\n *** \n")
         for i in test:
-            print("{} {}".format(i, test[i])
+            print("{} {}".format(i, test[i]))
         print "\n *** \n"
 
         run_test(test, dut_host, pb_device)
