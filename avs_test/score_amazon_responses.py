@@ -83,7 +83,7 @@ INCORRECT_RESPONSES = [
 
 
 def get_args():
-    description = 'Run a directory of raw files through the AVS SDK on a pi'
+    description = 'Score a directory of AVS responses.  Results are stored in a JSON file.'
     argparser = argparse.ArgumentParser(description=description)
     argparser.add_argument('in_dir', help='Input directory')
     argparser.add_argument('out_json', help='Output JSON file')

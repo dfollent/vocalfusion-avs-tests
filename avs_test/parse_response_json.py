@@ -17,7 +17,7 @@ def get_json(file):
 
 
 def get_args():
-    description = 'Parse JSON file of Amazon response scores to get aggregated results'
+    description = 'Parse JSON file of AVS response scores to get aggregated results'
     argparser = argparse.ArgumentParser(description=description)
     argparser.add_argument('input_json', help='Input JSON file')
     return argparser.parse_args()
@@ -84,16 +84,9 @@ def parse_data(input_data):
 
 
 def main():
-
     args = get_args()
     input_data = get_json(args.input_json)
-    
     parse_data(input_data)
-
-
-
-
-    
 
 
 if __name__ == '__main__':
