@@ -11,10 +11,10 @@ import pyaudio
 UTTERANCES = [
 	{"name": "_P01_01_M", "request": "alexa what time is it in little rock", "response": ".*time in Little Rock.*", "sha1hash":[]},
 	{"name": "_P01_02_M", "request": "alexa what is the capital of india", "response": ".*New Delhi.*", "sha1hash":["c1fe5e7486004330f8811c901accd84a0f01920d", "d7012fdf4c069ab8d3372fccb3072fe50d8c2e35"]},
-	{"name": "_P01_04_M", "request": "alexa who wrote moby dick", "response": ".*Herman Melville.*", "sha1hash":["b525acee418646eb4d34607e4527133608df4d49", "dfe2f15b13b8edba03121c5ff39bda9838dab758", "b2ca282381570c3d84335020bfbf0d9cadb673f3", "9b6b9759279ffcf22b5afb1f3c3ff68e001341db"]},
+	{"name": "_P01_04_M", "request": "alexa who wrote moby dick", "response": ".*Herman Melville.*", "sha1hash":["2aa418e9eaad007fb99708f99aecaf54225caf82", "b525acee418646eb4d34607e4527133608df4d49", "dfe2f15b13b8edba03121c5ff39bda9838dab758", "b2ca282381570c3d84335020bfbf0d9cadb673f3", "9b6b9759279ffcf22b5afb1f3c3ff68e001341db"]},
 	{"name": "_P02_01_M", "request": "alexa what time is it in boston", "response": ".*time in Boston.*", "sha1hash":[]},
 	{"name": "_P02_02_F", "request": "alexa what is the capital of bolivia", "response": ".*Sucre.*", "sha1hash":["42713da9e8096c1613e94081c2e98dbf20fe39ad", "f49c8ff5c6ff1d4bf5da575710d9f08c950e0c14"]},
-	{"name": "_P02_04_M", "request": "alexa who wrote to kill a mockingbird", "response": ".*Harper Lee.*", "sha1hash":["685585c15f8cabdb64cac42a9e24c87d211b3a48", "1b7ac6862050a06b1ad81895752431e8f7d19908", "d758b48753fcea6f4d3b1afda2c599d2e82b2d5f"]},
+	{"name": "_P02_04_M", "request": "alexa who wrote to kill a mockingbird", "response": ".*Harper Lee.*", "sha1hash":["d45966b98abfda1b1f105f4855acec10257891ce", "685585c15f8cabdb64cac42a9e24c87d211b3a48", "1b7ac6862050a06b1ad81895752431e8f7d19908", "d758b48753fcea6f4d3b1afda2c599d2e82b2d5f"]},
 	{"name": "_P03_01_F", "request": "alexa what time is it in washington", "response": ".*time in Washington.*", "sha1hash":[]},
 	{"name": "_P03_05_F", "request": "alexa how do you spell zoo", "response": ".*Zoo.*spelled.*", "sha1hash":["d5a1bc44f66e7050fe23509820c02fd7436fbe21", "a42c63a45328c3952402c3513c5247c972f96e78", "1e59481d7f391e09e3601179b2c1982fb8601229", "0e9d8dc234f7947e6dc4e1122cca4b4816be0bb4", "78d83892dfe297c57bf51b3712cf1ab1ed0d6e70", "135395b6603e4b61429015318c4725b30a0bc2e0", "e4bc58d3df05fe85c748fbcd50dec910044fd90b"]},
 	{"name": "_P04_01_F", "request": "alexa what time is it in saint paul", "response": ".*time in Saint Paul.*", "sha1hash":[]},
@@ -48,7 +48,7 @@ UTTERANCES = [
 	{"name": "_P15_02_M", "request": "alexa what is the capital of argentina", "response": ".*Buenos Aires.*", "sha1hash":["79ce6d1f046d7697f7a8f869bfa63d85b2059469", "c67f33830750482ddbf3d705930db63d8599c96d"]},
 	{"name": "_P16_01_M", "request": "alexa what time is it in san luis obispo california", "response": ".*time in San Luis Obispo.*", "sha1hash":[]},
 	{"name": "_P16_02_M", "request": "alexa what is the capital of canada", "response": ".*Ottawa.*", "sha1hash":["0114d2b577989b514ed66b7efdb455cc7577b552", "94a19dd6d961f6faf0d34dc641a5bce587eacc57"]},
-	{"name": "_P16_04_M", "request": "alexa who wrote twenty thousand leagues under the sea", "response": ".*Jules Verne.*", "sha1hash":["3dda0a9c8f02eebd377a5112e0b827979c4c9368", "206cb15d19ff7b20c13e6266db4f1d280f79329a", "153067c92137fa3b7d95176c16f2ab1135cde96d", "d0abeabead57f47c73c900c6e77653b190038e38", "c252be534ad8103c2cac778f1b61b6eac3098d86", "89cd11efafa4e5b67616ce99fd664ba0cdf52ac0", "a98b74a1b0a41817c21830b3dc82975ac952c35c"]},
+	{"name": "_P16_04_M", "request": "alexa who wrote twenty thousand leagues under the sea", "response": ".*Jules Verne.*", "sha1hash":["f53c12ff0a6e809972e2ac027d1b72bd0f2ce0c4", "3dda0a9c8f02eebd377a5112e0b827979c4c9368", "206cb15d19ff7b20c13e6266db4f1d280f79329a", "153067c92137fa3b7d95176c16f2ab1135cde96d", "d0abeabead57f47c73c900c6e77653b190038e38", "c252be534ad8103c2cac778f1b61b6eac3098d86", "89cd11efafa4e5b67616ce99fd664ba0cdf52ac0", "a98b74a1b0a41817c21830b3dc82975ac952c35c"]},
 	{"name": "_P17_01_F", "request": "alexa what time is it in tucson", "response": ".*time in Tucson.*", "sha1hash":[]},
 	{"name": "_P17_02_F", "request": "alexa what is the capital of bolivia", "response": ".*Sucre.*", "sha1hash":["42713da9e8096c1613e94081c2e98dbf20fe39ad", "f49c8ff5c6ff1d4bf5da575710d9f08c950e0c14"]},
 	{"name": "_P17_04_F", "request": "alexa who wrote the secret garden", "response": ".*Frances Hodgson Burnett.*", "sha1hash":["959188a20380d709ced67e95aa89ca4ea235e62f", "a7c962de0da849519be2a7f164078f810ed84dee", "40502ae4d09c5c6a83055998e58309aa83616516"]},
@@ -82,7 +82,9 @@ INCORRECT_RESPONSES = [
     "bae3b9a863c7da7a10dcdc34dc324fef822a0e38", # Sorry, I don't know that one
     "0799ec9b8d3c6a1a0f97daede3802a0e2aebaccf", # Sorry, I didn't get that
     "bbd8426c5b7450796040334b35d105ddbceced57", # I think I missed part of your question
-    "fce65cd5aa03425a4f55af4de81d70b800045f03" # Sorry, can you repeat the word?
+    "fce65cd5aa03425a4f55af4de81d70b800045f03", # Sorry, can you repeat the word?
+    "5f176f8426860948bf9af6bf8dadfc71296f9854", # I didn't catch that
+    "487c88a714bac5961ed1a87165b0d75991340dcf" # I'm not sure I heard your full question
     
 ]
 
