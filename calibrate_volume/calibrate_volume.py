@@ -15,20 +15,12 @@ import wave
 
 
 MAX_VOLUME = 100
-<<<<<<< HEAD
 ERROR_MARGIN = 0.25
 REQ_STABILITY = 15
 
 dB_weights = ["dBA", "dBC", "dBZ"]
 
 
-=======
-EPSILON = 0.5
-REQ_STABILITY = 10
-
-dB_weights = ["dBA", "dBC", "dBZ"]
-
->>>>>>> origin/vf_playback
 class spl_meter():
     def __init__(self, cmd, weight):
         self.value = 0.0
@@ -36,11 +28,7 @@ class spl_meter():
         self.thread = threading.Thread(target=self.run)
         self._stop_event = threading.Event()
         self.running = False
-<<<<<<< HEAD
         self.weight_index = dB_weights.index(weight) if weight in dB_weights else 0
-=======
-        self.weight_index = dB_weights.index[weight] if weight in dB_weights else 0
->>>>>>> origin/vf_playback
 
     def start(self):
         self.thread.start()
@@ -176,11 +164,7 @@ def run(spl_cmd, setpoint, weight, pb_file, pb_device=None, make_plot=False):
     time.sleep(5)
     if spl.running == False:
         spl.stop()
-<<<<<<< HEAD
         raise Exception('SPL meter is not running. Cannot proceed.')
-=======
-        raise Exception('SPL device is not running, cannot proceed.')
->>>>>>> origin/vf_playback
 
     wav_to_play, stream = get_audio_stream(pb_file, pb_device)
     stream.start_stream()
@@ -204,11 +188,7 @@ def run(spl_cmd, setpoint, weight, pb_file, pb_device=None, make_plot=False):
             input_generator = control_algo(feedback, setpoint, h=0.3, Kp=0.2, Ti=3.5, e0=error)
             output = next(input_generator)
 
-<<<<<<< HEAD
             if abs(error) <= ERROR_MARGIN and abs(output) <= ERROR_MARGIN:
-=======
-            if abs(error) <= EPSILON and abs(output) <= EPSILON:
->>>>>>> origin/vf_playback
                 stability_count += 1
                 if stability_count >= REQ_STABILITY:
                     break
@@ -225,11 +205,7 @@ def run(spl_cmd, setpoint, weight, pb_file, pb_device=None, make_plot=False):
             time.sleep(0.25 - (time.time() % 0.25)) # Guarantee loop period of 0.25s
             time_step += 1
 
-<<<<<<< HEAD
         if abs(error) > ERROR_MARGIN or abs(output) > ERROR_MARGIN:
-=======
-        if abs(error) > EPSILON or abs(output) > EPSILON:
->>>>>>> origin/vf_playback
             print "WARNING calibration was unable to converge."
         else:
             print "Calibration complete."

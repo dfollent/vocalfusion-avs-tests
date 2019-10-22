@@ -152,24 +152,13 @@ def get_file_hash(file):
 			hasher.update(buf)
 			buf = read_file.read(BLOCKSIZE)
 	return hasher.hexdigest()
-	
+
 
 def get_file_block_hash(file, blocksize):
 	hasher = hashlib.sha1()
 	with open(file, 'rb') as read_file:
 		buf = read_file.read(blocksize)
 		hasher.update(buf)
-		# p = pyaudio.PyAudio()
-		# stream = p.open(format=pyaudio.paInt16,
-		# 				channels=1,
-		# 				rate=24000,
-		# 				output=True)
-		# 
-		# stream.write(buf)
-		# stream.stop_stream()
-		# stream.close()
-		# p.terminate()
-
 
 	return hasher.hexdigest()
 
@@ -188,14 +177,12 @@ def main():
 
 			else:
 				file_hash = get_file_hash(file)
-				print("\nFile response hash: {}".format(file_hash))
 				if file_hash in INCORRECT_RESPONSES:
 					response_result = {"file": file, "wake":1, "response":0, "sha1hash":file_hash}
 				else:
 					response_hash = ""
 					if "_01_" in utterance["name"]:
 						response_hash = get_file_block_hash(file, RESPONSE_01_BLOCKSIZE)
-						print("\nShort response hash: {}".format(response_hash))
 					else:
 						response_hash = file_hash
 					

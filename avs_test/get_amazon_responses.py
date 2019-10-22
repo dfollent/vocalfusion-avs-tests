@@ -26,7 +26,6 @@ def create_ssh_client():
     return client
 
 
-
 def check_dir_exists(directory):
     if not os.path.exists(directory):
         raise Exception("Input directory '{}' does not exist.".format(directory))
@@ -51,7 +50,7 @@ def get_args():
     argparser.add_argument('--password', default='raspberry', help='SSH password of RPi')
     argparser.add_argument('--cmd', default='sudo bash sdk-folder/startsample.sh', help='Command to run AVS SDK')
     argparser.add_argument('--op-point', type=int, default=5, help='Operating point')
-    argparser.add_argument('--regex', default='*.wav', help='Output directory')
+    argparser.add_argument('--regex', default='*.wav', help='Regex for files in input directory')
     argparser.add_argument('out_dir', default=None, help='Output directory')
     return argparser.parse_args()
 
@@ -69,7 +68,6 @@ def move_to_pi(file, channel, ip, username, password):
     scp.put(tmp_raw, '/tmp/in.raw')
     scp.close()
     ssh.close()
-
 
 
 def run_sdk(ip, username, password, cmd, runtime=20):
@@ -104,7 +102,6 @@ def get_response_raw(dest_file, ip, username, password):
 
 def create_wav_copy(raw_filepath, wav_copy_filepath, rate=16000):
     subprocess.call(["sox", "-t", "raw", "-e", "signed-integer", "-b", "16", "-c", "1", "-r", "24000", raw_filepath, "-r", str(rate), wav_copy_filepath])
-
 
 
 def main():
